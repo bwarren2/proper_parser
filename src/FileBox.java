@@ -1,11 +1,15 @@
 /**
+ * Responsible for absorbing, transforming, and persisting the replay data info.
+ *
+ * Replaces all the bad old data structures like DataStreams.
+ *
  * Created by ben on 7/22/16.
  */
 public class FileBox {
 
     // ArrayLists for the various things in Datastream.java in the old version here.
 
-    // POJOs for postprocessed datastructures.
+    // POJOs for post-processed data structures.
 
     public FileBox() {
     }

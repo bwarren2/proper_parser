@@ -6,6 +6,7 @@ import java.math.BigInteger;
 public class MatchResponse {
     private String filename;
     private BigInteger match_id;
+
     public MatchResponse(String filename, BigInteger match_id){
         this.filename = filename;
         this.match_id = match_id;

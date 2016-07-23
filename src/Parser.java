@@ -1,4 +1,8 @@
 /**
+ * The interface with the parsing library.
+ *
+ * Instead of the current terrible DS implementation, use the FileBox abstraction.
+ *
  * Created by ben on 7/22/16.
  */
 public class Parser {

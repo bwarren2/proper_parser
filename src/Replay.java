@@ -1,4 +1,6 @@
 /**
+ *
+ *
  * Created by ben on 7/22/16.
  */
 public class Replay {
@@ -33,7 +35,7 @@ public class Replay {
     /**
      * Remove the local file.
      */
-    private void purgeFile(){
+    public void purgeFile(){
         // Delete the replay file.
     }
 
