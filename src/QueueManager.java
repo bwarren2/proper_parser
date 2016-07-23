@@ -1,5 +1,5 @@
 /**
- * An interfacing class to AMQP for the worker.
+ * An interfacing class to RabbitMQ for the worker.
  *
  * Basically knows how to get/send responses.  Worker is responsible for constantly checking for new responses and
  * dealing with them.
