@@ -1,6 +1,8 @@
 import java.math.BigInteger;
 
 /**
+ * Dopey helper class for interpreting the job tickets from RabbitMQ.
+ *
  * Created by ben on 7/22/16.
  */
 

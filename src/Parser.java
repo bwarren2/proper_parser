@@ -19,7 +19,7 @@ public class Parser {
      */
     public FileBox run(FileBox filebox){
         // Setup business logic from original Parser.run here.
-        // Mostly calling `CDemoFileInfo info = Clarity.infoForFile(filename);`
+        // Mostly calling `CDemoFileInfo info = Clarity.infoForFile(replay.getFilename());`
         return filebox;
     }
 

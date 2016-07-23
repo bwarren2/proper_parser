@@ -23,7 +23,8 @@ public class Replay {
     }
 
     /**
-     * Make the file at the given URL local
+     * Make the file at the given URL local and unzipped.  Probably will either get rolled into the constructor
+     * or broken into more parts for testing.
      */
     private void getFile(){
         // Get the file,

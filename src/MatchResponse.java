@@ -1,6 +1,10 @@
 import java.math.BigInteger;
 
 /**
+ * Dopey helper class to send messages back to RabbitMQ.
+ *
+ * The API on those messages will need to change when the postprocessing moves over here.
+ *
  * Created by ben on 7/22/16.
  */
 public class MatchResponse {
