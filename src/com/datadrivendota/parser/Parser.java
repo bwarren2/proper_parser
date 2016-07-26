@@ -1,7 +1,9 @@
+package com.datadrivendota.parser;
+
 /**
  * The interface with the parsing library.
  *
- * Instead of the current terrible DS implementation, use the FileBox abstraction.
+ * Instead of the current terrible DS implementation, use the com.datadrivendota.parser.FileBox abstraction.
  *
  * Created by ben on 7/22/16.
  */
@@ -18,7 +20,7 @@ public class Parser {
      * @return
      */
     public FileBox run(FileBox filebox){
-        // Setup business logic from original Parser.run here.
+        // Setup business logic from original com.datadrivendota.parser.Parser.run here.
         // Mostly calling `CDemoFileInfo info = Clarity.infoForFile(replay.getFilename());`
         return filebox;
     }

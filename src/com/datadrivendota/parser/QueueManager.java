@@ -1,7 +1,11 @@
+package com.datadrivendota.parser;
+
+import java.math.BigInteger;
+
 /**
  * An interfacing class to RabbitMQ for the worker.
  *
- * Basically knows how to get/send responses.  Worker is responsible for constantly checking for new responses and
+ * Basically knows how to get/send responses.  com.datadrivendota.parser.Worker is responsible for constantly checking for new responses and
  * dealing with them.
  *
  * Created by ben on 7/22/16.
@@ -24,7 +28,7 @@ public class QueueManager {
     /**
      * Stringify the AMQP message into a struct with filename and match id.
      *
-     * @return POJO for Worker.
+     * @return POJO for com.datadrivendota.parser.Worker.
      */
     public MatchRequest getResp(){
 
@@ -37,6 +41,6 @@ public class QueueManager {
      * @param filename filename on s3 or magic error codes
      * @param match_id match ID the file corresponds to.
      */
-    public void sendResp(String filename, String match_id){
+    public void sendResp(String filename, BigInteger match_id){
     }
 }

@@ -1,3 +1,5 @@
+package com.datadrivendota.parser;
+
 /**
  * Responsible for absorbing, transforming, and persisting the replay data info.
  *

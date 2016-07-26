@@ -1,3 +1,5 @@
+package com.datadrivendota.parser;
+
 /**
  * The major business.  Listens to the rabbit queue for work tickets and delegates to other classes for data transforms.
  *
@@ -24,6 +26,5 @@ public class Worker {
 
             }
         }
-        FileBox filebox = new FileBox()
     }
 }
