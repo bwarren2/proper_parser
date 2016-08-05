@@ -6,7 +6,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 /**
@@ -39,17 +38,10 @@ public class QueueManager {
      * @return POJO for com.datadrivendota.parser.Worker.
      */
     public MatchRequest getResp() throws Exception{
-
-
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setUri(System.getenv("CLOUDAMQP_URL"));
-        factory.setAutomaticRecoveryEnabled(true);
-        System.out.println(System.getenv("CLOUDAMQP_URL"));
-        Connection connection = factory.newConnection();
+        Connection connection = this.getConnection();
         Channel channel = connection.createChannel();
 
         channel.exchangeDeclare(LISTEN_EXCHANGE, "direct");
-
         String queueName = channel.queueDeclare(
                 LISTEN_QUEUE,  DURABLE, PASSIVE, EXCLUSIVE, null
         ).getQueue();
@@ -86,10 +78,7 @@ public class QueueManager {
 
         System.out.println("Sending response back to queue");
 
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setUri(System.getenv("CLOUDAMQP_URL"));
-        factory.setAutomaticRecoveryEnabled(true);
-        Connection connection = factory.newConnection();
+        Connection connection = this.getConnection();
         Channel channel = connection.createChannel();
 
         channel.exchangeDeclare(SEND_EXCHANGE, "direct", true);
@@ -100,7 +89,7 @@ public class QueueManager {
 
         MatchResponse msgObj = new MatchResponse(
                 filename,
-                new BigInteger(match_id)
+                new BigInteger(String.valueOf(match_id))
         );
         Gson gson = new Gson();
         String json = gson.toJson(msgObj);
@@ -113,5 +102,18 @@ public class QueueManager {
         System.out.println(" [x] Sent '" + json + "'");
 
 
+    }
+
+    private Connection getConnection(){
+        try {
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setUri(System.getenv("CLOUDAMQP_URL"));
+            factory.setAutomaticRecoveryEnabled(true);
+            System.out.println(System.getenv("CLOUDAMQP_URL"));
+            Connection connection = factory.newConnection();
+            return connection;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
