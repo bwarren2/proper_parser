@@ -1,5 +1,8 @@
 package com.datadrivendota.parser;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 /**
  * Responsible for absorbing, transforming, and persisting the replay data info.
  *
@@ -13,7 +16,28 @@ public class FileBox {
 
     // POJOs for post-processed data structures.
 
+    private HashMap<Integer, PlayerFile> files = new HashMap<>();
+
+    public ArrayList<StringTableEntry> stringTableEntries = new ArrayList<>();
+
+    public ArrayList<StringTableEntry> getStringTableEntries() {
+        return stringTableEntries;
+    }
+
     public FileBox() {
+
+    }
+
+    public void addStringTableEntry(StringTableEntry ste){
+        this.stringTableEntries.add(ste);
+    }
+
+    public void printStrings(){
+        System.out.print(stringTableEntries);
+    }
+
+    public PlayerFile getPlayerFile(Integer slot){
+        return this.files.get(slot);
     }
 
     /**
@@ -25,6 +49,7 @@ public class FileBox {
         this.generateJsonFiles();
         this.uploadFiles();
         this.purgeFiles();
+        return "";
     }
 
     /**

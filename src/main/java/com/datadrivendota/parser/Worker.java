@@ -7,23 +7,29 @@ package com.datadrivendota.parser;
  */
 public class Worker {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         QueueManager manager = new QueueManager();
-        while (true){
-            MatchRequest request = manager.getResp();
+        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+
+        Integer x = 0;
+        while (x<1){
+            x = x + 1;
+//            MatchRequest request = manager.getResp();
+            MatchRequest request = manager.fakeGetResp();
             if(request!=null){
                 FileBox filebox = new FileBox();
                 Replay replay = new Replay(request.getUrl());
                 Parser parser = new Parser(replay);
 
-                parser.run(filebox);  // Rip apart the replay and populate the filebox.
-                replay.purgeFile();  // Remove the local replay file.
-
-                // Renames required.  Old system passed one file, we'll only pass success/fail codes
-                String filename = filebox.handle();
-
-                manager.sendResp(filename, request.getMatch_id());
-
+                filebox = parser.run(filebox);  // Rip apart the replay and populate the filebox.
+//                replay.purgeFile();  // Remove the local replay file.
+                filebox.printStrings();
+//
+//                // Renames required.  Old system passed one file, we'll only pass success/fail codes
+//                String filename = filebox.handle();
+//
+//                manager.sendResp(filename, request.getMatch_id());
+//                manager.ackDelivery();
             }
         }
     }

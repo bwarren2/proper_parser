@@ -6,7 +6,10 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
+import java.io.IOException;
 import java.math.BigInteger;
+
+import static com.rabbitmq.client.QueueingConsumer.*;
 
 /**
  * An interfacing class to RabbitMQ for the worker.
@@ -26,9 +29,26 @@ public class QueueManager {
     private final static boolean DURABLE = true;
     private final static boolean EXCLUSIVE = false;
 
-    private Channel listen_channel;
+    private Channel channel;
+    private QueueingConsumer consumer;
+    private String queueName = null;
+    private Delivery delivery = null;
 
     public QueueManager() {
+
+//        try {
+//            Connection connection = this.getConnection();
+//            this.channel = connection.createChannel();
+//            this.channel.exchangeDeclare(LISTEN_EXCHANGE, "direct");
+//            this.queueName = this.channel.queueDeclare(
+//                    LISTEN_QUEUE,  DURABLE, PASSIVE, EXCLUSIVE, null
+//            ).getQueue();
+//            this.channel.queueBind(this.queueName, LISTEN_EXCHANGE, LISTEN_EXCHANGE);
+//            this.channel.basicQos(3);
+//            this.consumer = new QueueingConsumer(channel);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
     }
 
@@ -38,34 +58,24 @@ public class QueueManager {
      * @return POJO for com.datadrivendota.parser.Worker.
      */
     public MatchRequest getResp() throws Exception{
-        Connection connection = this.getConnection();
-        Channel channel = connection.createChannel();
 
-        channel.exchangeDeclare(LISTEN_EXCHANGE, "direct");
-        String queueName = channel.queueDeclare(
-                LISTEN_QUEUE,  DURABLE, PASSIVE, EXCLUSIVE, null
-        ).getQueue();
+        this.channel.basicConsume(this.queueName, false, this.consumer);
 
-
-        channel.queueBind(queueName, LISTEN_EXCHANGE, LISTEN_EXCHANGE);
-        channel.basicQos(3);
-        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
-
-        QueueingConsumer consumer = new QueueingConsumer(channel);
-        boolean autoAck = false;
-        channel.basicConsume(queueName, autoAck, consumer);
-
-        while (true) {
-            QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-            String message = new String(delivery.getBody(),"UTF-8");
-            Gson gson = new Gson();
-            MatchRequest req = gson.fromJson(message, MatchRequest.class);
-            System.out.println(" [x] Received '" + req.url + "' (M#"+req.match_id.toString() + ")");
-            new Main().parseID(req.url, req.match_id.toString());
-            channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-        }
-
+        this.delivery = this.consumer.nextDelivery();
+        String message = new String(delivery.getBody(),"UTF-8");
+        Gson gson = new Gson();
+        MatchRequest req = gson.fromJson(message, MatchRequest.class);
+        System.out.println(" [x] Received '" + req.getUrl()+ "' (M#"+req.getMatch_id().toString() + ")");
+        return req;
     }
+
+    public MatchRequest fakeGetResp() throws Exception{
+
+        MatchRequest req = new MatchRequest("http://replay113.valve.net/570/2549583869_1329696221.dem.bz2", new BigInteger("2549583869"));
+        System.out.println(" [x] Received '" + req.getUrl()+ "' (M#"+req.getMatch_id().toString() + ")");
+        return req;
+    }
+
 
     /**
      * Send back to RabbitMQ whatever the parser said about its job.  Usually a match ID and filename on s3,
@@ -104,16 +114,21 @@ public class QueueManager {
 
     }
 
-    private Connection getConnection(){
+    public void ackDelivery() {
         try {
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setUri(System.getenv("CLOUDAMQP_URL"));
-            factory.setAutomaticRecoveryEnabled(true);
-            System.out.println(System.getenv("CLOUDAMQP_URL"));
-            Connection connection = factory.newConnection();
-            return connection;
-        } catch (Exception e) {
+            this.channel.basicAck(this.delivery.getEnvelope().getDeliveryTag(), false);
+        } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Connection getConnection() throws Exception{
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUri(System.getenv("CLOUDAMQP_URL"));
+        factory.setAutomaticRecoveryEnabled(true);
+        System.out.println(System.getenv("CLOUDAMQP_URL"));
+        Connection connection = factory.newConnection();
+        return connection;
+
     }
 }
