@@ -18,15 +18,15 @@ public class Worker {
             MatchRequest request = manager.fakeGetResp();
             if(request!=null){
                 FileBox filebox = new FileBox();
-                Replay replay = new Replay(request.getUrl());
+                Replay replay = new Replay("");
+                replay.setFilename("test_2549583869.dem");
                 Parser parser = new Parser(replay);
 
                 filebox = parser.run(filebox);  // Rip apart the replay and populate the filebox.
 //                replay.purgeFile();  // Remove the local replay file.
-                filebox.printStrings();
-//
-//                // Renames required.  Old system passed one file, we'll only pass success/fail codes
-//                String filename = filebox.handle();
+
+                filebox.tranforms();
+//                filebox.upload();
 //
 //                manager.sendResp(filename, request.getMatch_id());
 //                manager.ackDelivery();
