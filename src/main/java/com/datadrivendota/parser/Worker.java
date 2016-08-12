@@ -24,8 +24,8 @@ public class Worker {
 
                 filebox = parser.run(filebox);  // Rip apart the replay and populate the filebox.
 //                replay.purgeFile();  // Remove the local replay file.
-
-                filebox.tranforms();
+                filebox.setMatch_id(request.getMatch_id());
+                filebox.handle();
 //                filebox.upload();
 //
 //                manager.sendResp(filename, request.getMatch_id());

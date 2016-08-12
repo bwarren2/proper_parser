@@ -18,3 +18,5 @@ but because sending confirmation back to Python happens after file upload, this 
 `com.datadrivendota.parser.QueueManager` handles AMQP stuff so `com.datadrivendota.parser.Worker` doesn't have to.
 
 `com.datadrivendota.parser.MatchRequest` and `com.datadrivendota.parser.MatchResponse` codify the message-sending back to RabbitMQ.  They might turn into locals of `com.datadrivendota.parser.QueueManager` depending on how factoring goes.
+
+We target Java 1.7 because Jackson has troubles with 1.8.  (Unable to discover "Versioned".)  This might be fixable with more effort than I am putting in now, but I don't need 8 yet and 7 works, so 7 it is.

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import skadistats.clarity.model.Entity;
 import skadistats.clarity.processor.runner.Context;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -14,6 +13,70 @@ public class StateEntry{
     public Integer tick_time;
     public Integer offset_time;
     public Integer player_slot;
+
+    @Override
+    public boolean equals(Object otherObj) {
+        if((otherObj== null) || (getClass() != otherObj.getClass())){
+            System.out.print("Error!");
+            return false;
+        } else {
+            StateEntry obj = (StateEntry) otherObj;
+            // We don't test armor because the json repr is different than stored repr (derived).
+            float epsilon = (float) 0.00001;
+            if (
+                    Math.abs(this.agility - obj.agility) < epsilon &&
+                    Math.abs(this.agility_total - obj.agility_total) < epsilon &&
+                    (this.assists == obj.assists) &&
+                    (this.creep_kill_gold == obj.creep_kill_gold) &&
+                    (this.damage_bonus == obj.damage_bonus) &&
+                    (this.damage_max == obj.damage_max) &&
+                    (this.damage_min == obj.damage_min) &&
+                    (this.deaths == obj.deaths) &&
+                    (this.denies == obj.denies) &&
+                    Math.abs(this.healing - obj.healing) < epsilon &&
+                    (this.health == obj.health) &&
+                    (this.hero_id == obj.hero_id) &&
+                    (this.hero_kill_gold == obj.hero_kill_gold) &&
+                    (this.income_gold == obj.income_gold) &&
+                    Math.abs(this.intelligence - obj.intelligence) < epsilon &&
+                    Math.abs(this.intelligence_total - obj.intelligence_total) < epsilon &&
+                    (this.item_0 == obj.item_0) &&
+                    (this.item_1 == obj.item_1) &&
+                    (this.item_2 == obj.item_2) &&
+                    (this.item_3 == obj.item_3) &&
+                    (this.item_4 == obj.item_4) &&
+                    (this.item_5 == obj.item_5) &&
+                    (this.kills == obj.kills) &&
+                    (this.last_hits == obj.last_hits) &&
+                    (this.lifestate == obj.lifestate) &&
+                    Math.abs(this.getMagic_resist_pct() - obj.getMagic_resist_pct()) < epsilon &&
+                    Math.abs(this.mana - obj.mana) < epsilon &&
+                    (this.max_health == obj.max_health) &&
+                    Math.abs(this.max_mana - obj.max_mana) < epsilon &&
+                    (this.misses == obj.misses) &&
+                    (this.nearby_creep_deaths == obj.nearby_creep_deaths) &&
+                    (this.recent_damage == obj.recent_damage) &&
+                    (this.reliable_gold == obj.reliable_gold) &&
+                    Math.abs(this.respawn_time - obj.respawn_time) < epsilon &&
+                    (this.roshan_kills == obj.roshan_kills) &&
+                    (this.shared_gold == obj.shared_gold) &&
+                    Math.abs(this.strength - obj.strength) < epsilon &&
+                    Math.abs(this.strength_total - obj.strength_total) < epsilon &&
+                    (this.total_earned_gold == obj.total_earned_gold) &&
+                    (this.tower_kills == obj.tower_kills) &&
+                    (this.unreliable_gold == obj.unreliable_gold) &&
+                    (this.x == obj.x) &&
+                    (this.xp == obj.xp) &&
+                    (this.y == obj.y)
+                    ) {
+                System.out.print("True!");
+                return true;
+            } else {
+                System.out.print("False!");
+                return false;
+            }
+        }
+    }
 
     public Integer total_earned_gold;
     public Integer reliable_gold;
@@ -51,7 +114,7 @@ public class StateEntry{
     public Float mana;
     public Float max_mana;
     public Float armor;
-    public Float magic_resist_pct;
+    private Float magic_resist_pct;
     public Integer damage_min;
     public Integer damage_max;
     public Integer damage_bonus;
@@ -91,6 +154,9 @@ public class StateEntry{
     public StateEntry(Integer player_slot, Integer tick_time){
         this.player_slot = player_slot;
         this.tick_time= tick_time;
+    }
+
+    public StateEntry() {
     }
 
     public void addPlayerState(Entity playerresource, Integer i){
@@ -143,9 +209,9 @@ public class StateEntry{
         this.agility_total = Util.getEntityProperty(hero, "m_flAgilityTotal", null);
         this.intelligence_total = Util.getEntityProperty(hero, "m_flIntellectTotal", null);
         this.respawn_time = Util.getEntityProperty(hero, "m_flRespawnTime", null);
+        this.setMagic_resist_pct((Float) Util.getEntityProperty(hero, "m_flMagicalResistanceValue", null));
         this.recent_damage = Util.getEntityProperty(hero, "m_iRecentDamage", null);
         this.armor = Util.getEntityProperty(hero, "m_flPhysicalArmorValue", null);
-        this.magic_resist_pct = Util.getEntityProperty(hero, "m_flMagicalResistanceValue", null);
         this.lifestate = Util.getEntityProperty(hero, "m_lifeState", null);
 
         this.item_0_id = Util.getItem(ctx, hero, 0);
@@ -163,14 +229,63 @@ public class StateEntry{
                 "tick_time=" + tick_time +
                 ", offset_time=" + offset_time +
                 ", player_slot=" + player_slot +
+                ", total_earned_gold=" + total_earned_gold +
+                ", reliable_gold=" + reliable_gold +
+                ", unreliable_gold=" + unreliable_gold +
+                ", shared_gold=" + shared_gold +
+                ", hero_kill_gold=" + hero_kill_gold +
+                ", creep_kill_gold=" + creep_kill_gold +
+                ", income_gold=" + income_gold +
+                ", xp=" + xp +
+                ", healing=" + healing +
+                ", last_hits=" + last_hits +
+                ", nearby_creep_deaths=" + nearby_creep_deaths +
+                ", tower_kills=" + tower_kills +
+                ", roshan_kills=" + roshan_kills +
+                ", denies=" + denies +
+                ", misses=" + misses +
+                ", stuns=" + stuns +
+                ", kills=" + kills +
+                ", assists=" + assists +
+                ", deaths=" + deaths +
+                ", hero_id=" + hero_id +
+                ", x=" + x +
+                ", y=" + y +
+                ", damage_taken=" + damage_taken +
                 ", health=" + health +
+                ", max_health=" + max_health +
                 ", mana=" + mana +
-                ", item_0_id='" + item_0_id + '\'' +
+                ", max_mana=" + max_mana +
+                ", armor=" + armor +
+                ", magic_resist_pct=" + getMagic_resist_pct() +
+                ", damage_min=" + damage_min +
+                ", damage_max=" + damage_max +
+                ", damage_bonus=" + damage_bonus +
+                ", recent_damage=" + recent_damage +
+                ", strength=" + strength +
+                ", agility=" + agility +
+                ", intelligence=" + intelligence +
+                ", strength_total=" + strength_total +
+                ", agility_total=" + agility_total +
+                ", intelligence_total=" + intelligence_total +
+                ", respawn_time=" + respawn_time +
+                ", lifestate=" + lifestate +
+                ", item_0_id=" + item_0_id +
+                ", item_1_id=" + item_1_id +
+                ", item_2_id=" + item_2_id +
+                ", item_3_id=" + item_3_id +
+                ", item_4_id=" + item_4_id +
+                ", item_5_id=" + item_5_id +
                 ", item_0='" + item_0 + '\'' +
+                ", item_1='" + item_1 + '\'' +
+                ", item_2='" + item_2 + '\'' +
+                ", item_3='" + item_3 + '\'' +
+                ", item_4='" + item_4 + '\'' +
+                ", item_5='" + item_5 + '\'' +
                 '}';
     }
 
-    public void setOffset_time(Integer offset) {
+    public void changeOffset_time(Integer offset) {
         this.offset_time = this.tick_time - offset;
     }
     public Integer getPlayer_slot() {
@@ -179,6 +294,8 @@ public class StateEntry{
     public Integer getTick_time() {return tick_time;}
     public Double doubleMana() {return Double.valueOf(mana);}
 
+    public void setPct_health() {}
+    public void setPct_mana() {}
     public Integer getPct_health(){
         if (this.max_health<=0){
             return 0;
@@ -196,16 +313,26 @@ public class StateEntry{
         }
     }
 
+    public void setArmor(){}
     public Float getArmor(){
-        return this.armor + Math.round(this.agility/7*100)/100;
+        try {
+            return this.armor + Math.round(this.agility/7*100)/100;
+        } catch (NullPointerException e){
+            e.printStackTrace();
+            return 0f;
+        }
     }
 
+
+    public void setBase_damage(){}
     public Integer getBase_damage(){
         return Math.round((this.damage_max + this.damage_min)/2);
     }
     public Integer getBonus_damage(){
         return this.damage_bonus;
     }
+
+    public void setTotal_damage(){}
     public Integer getTotal_damage(){
         return Math.round((this.damage_max + this.damage_min)/2)+this.damage_bonus;
     }
@@ -214,21 +341,35 @@ public class StateEntry{
         // I should learn how to use reflection.  Later.
         if (this.item_0_id!=null && stringTableEntries.get(this.item_0_id)!=null){
             this.item_0 = stringTableEntries.get(this.item_0_id);
+            this.item_0_id = null;
         }
         if (this.item_1_id!=null && stringTableEntries.get(this.item_1_id)!=null){
             this.item_1 = stringTableEntries.get(this.item_1_id);
+            this.item_1_id = null;
         }
         if (this.item_2_id!=null && stringTableEntries.get(this.item_2_id)!=null){
             this.item_2 = stringTableEntries.get(this.item_2_id);
+            this.item_2_id = null;
         }
         if (this.item_3_id!=null && stringTableEntries.get(this.item_3_id)!=null){
             this.item_3 = stringTableEntries.get(this.item_3_id);
+            this.item_3_id = null;
         }
         if (this.item_4_id!=null && stringTableEntries.get(this.item_4_id)!=null){
             this.item_4 = stringTableEntries.get(this.item_4_id);
+            this.item_4_id = null;
         }
         if (this.item_5_id!=null && stringTableEntries.get(this.item_5_id)!=null){
             this.item_5 = stringTableEntries.get(this.item_5_id);
+            this.item_5_id = null;
         }
+    }
+
+    public Float getMagic_resist_pct() {
+        return magic_resist_pct;
+    }
+
+    public void setMagic_resist_pct(Float magic_resist_pct) {
+        this.magic_resist_pct = magic_resist_pct;
     }
 }

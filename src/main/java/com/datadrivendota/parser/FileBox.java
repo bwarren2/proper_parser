@@ -7,14 +7,16 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.math.BigInteger;
+import java.util.*;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -31,7 +33,7 @@ public class FileBox {
     // POJOs for post-processed data structures.
 
     // Player slot, then time:state
-    private HashMap<Integer, PlayerFile> files = new HashMap<>();
+    private HashMap<Integer, HashMap<Integer, StateEntry>> files = new HashMap<Integer, HashMap<Integer, StateEntry>>();
 
     // Combatlog events happen at ~random times, and can have many at a single tick.
     // We process them later.
@@ -40,17 +42,19 @@ public class FileBox {
     // These are the strings mapped to ids given by protobuf.
     public HashMap<Integer, String> stringTable = new HashMap<>();
     private String winner;
+    private BigInteger match_id;
 
     public FileBox() {
     }
 
     public void addState(StateEntry entry){
         Integer slot = entry.getPlayer_slot();
-        PlayerFile file = files.get(slot);
+        HashMap<Integer, StateEntry> file = files.get(slot);
         if (file == null) {
-            files.put(slot, new PlayerFile());
+            file = new HashMap<Integer, StateEntry>();
+            files.put(slot, file);
         }
-        files.get(slot).addState(entry);
+        files.get(slot).put(entry.getTick_time(), entry);
 
     }
     public void addCombat(CombatEntry entry){
@@ -64,13 +68,14 @@ public class FileBox {
     public void addStringTableEntry(int rowIndex, String key) {
         this.stringTable.put(rowIndex, key);
     }
+
     public void printStrings(){
         for (Integer key: this.stringTable.keySet()) {
             System.out.println(key+" "+this.stringTable.get(key));
         }
     }
 
-    public PlayerFile getPlayerFile(Integer slot){
+    public HashMap<Integer, StateEntry> getPlayerFile(Integer slot){
         return this.files.get(slot);
     }
 
@@ -98,19 +103,59 @@ public class FileBox {
      *  None of this part is written yet, and is one of the major goals of the rewrite.
      */
 
-    public void tranforms() {
-        this.transformAndRollup();
-        this.generateJsonFiles();
+    public void handle() {
+        this.mungeTimes();
+        this.saveItemBuys();
+        this.uploadBasicState();
         this.uploadFiles();
         this.purgeFiles();
     }
 
-    private void transformAndRollup(){
+    private void uploadBasicState() {
+        for (Integer slot : this.files.keySet()){
+            HashMap<Integer, StateEntry> statemap = this.files.get(slot);
+            List<StateEntry> stateEntryList = new ArrayList<StateEntry>();
+            for (StateEntry se : statemap.values()){
+                if (se.health != null){
+                    stateEntryList.add(se);
+                }
+            }
+
+            Comparator<StateEntry > comparator = new Comparator<StateEntry >() {
+                public int compare(StateEntry se1, StateEntry se2) {
+                    return se1.offset_time - se2.offset_time;
+                }
+            };
+            Collections.sort(stateEntryList, comparator);
+            ObjectMapper om = new ObjectMapper();
+            om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            try {
+                String value = om.writeValueAsString(stateEntryList);
+                byte[] data = gzipString(value);
+                String filename = makeFilename(slot.toString(), "statelog", "allstate");
+                writeS3(filename, data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+    public String makeFilename(String dataslice, String log_type, String facet){
+
+        // Explicit argument indices may be used to re-order output.
+        return String.format("%s_%s_%s_%s_v%s.json.gz",
+                this.match_id,
+                dataslice,
+                log_type,
+                facet,
+                System.getenv("PARSER_VERSION")
+        );
+
+    }
+
+    private void mungeTimes(){
         this.offsetTimes();
         this.convertItems();
-        this.saveItemBuys();
-        // this.stateMath();
-        // this.combatMath();
     }
 
     private void saveItemBuys() {
@@ -131,13 +176,16 @@ public class FileBox {
             combatEntry.setOffset_time(offset);
         }
         for (Integer key: this.files.keySet()){
-            this.files.get(key).setOffset(offset);
+            HashMap<Integer, StateEntry> file = this.files.get(key);
+            for (Integer key2: file.keySet()) file.get(key2).changeOffset_time(offset);
         }
     }
 
     private void convertItems() {
         for (Integer key: this.files.keySet()){
-            this.files.get(key).swapItemNames(stringTable);
+            HashMap<Integer, StateEntry> file = this.files.get(key);
+            for (Integer key2: file.keySet()) file.get(key2).swapItemNames(stringTable);
+
         }
     }
 
@@ -145,7 +193,6 @@ public class FileBox {
      *  JSONify the postprocessed POJOs.
      */
     private void generateJsonFiles(){
-
     }
 
     /**
@@ -223,4 +270,7 @@ public class FileBox {
 
     }
 
+    public void setMatch_id(BigInteger match_id) {
+        this.match_id = match_id;
+    }
 }

@@ -2,13 +2,14 @@ package com.datadrivendota.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.net.SyslogAppender;
+import ch.qos.logback.classic.net.SyslogAppender;
 import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.*;
@@ -34,6 +35,25 @@ public class FileBoxTest {
         }
         assertEquals(str, outStr);
     }
+
+    @Test
+    public void makeFilename() throws Exception {
+
+        String expected = "1_all_statelog_128_v2.json.gz";
+        FileBox f = new FileBox();
+        f.setMatch_id(BigInteger.valueOf(1));
+        String actual = f.makeFilename("all", "statelog", "128");
+        assertEquals(expected, actual);
+
+        String expected_2 = "2564868930_radiant_statelog_allstate_v2.json.gz";
+        FileBox f2 = new FileBox();
+        f2.setMatch_id(new BigInteger("2564868930"));
+        String actual_2 = f2.makeFilename("radiant", "statelog", "allstate");
+        assertEquals(expected_2, actual_2);
+
+
+    }
+
 
     @Test
     public void uploadS3() throws Exception {

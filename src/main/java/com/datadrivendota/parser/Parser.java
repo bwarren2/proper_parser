@@ -1,6 +1,7 @@
 package com.datadrivendota.parser;
 
 import com.google.protobuf.ByteString;
+
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
 import skadistats.clarity.Clarity;
