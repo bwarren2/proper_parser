@@ -13,6 +13,26 @@ import static org.junit.Assert.*;
  */
 public class StateEntryTest {
     @Test
+    public void add() throws Exception {
+        StateEntry se1 = new StateEntry();
+        se1.health = 10;
+        StateEntry se2 = new StateEntry();
+        se2.health = 20;
+        se1.add(se2);
+        assertEquals(Math.round(se1.health), 30);
+    }
+
+    @Test
+    public void subtract() throws Exception {
+        StateEntry se1 = new StateEntry();
+        se1.health = 10;
+        StateEntry se2 = new StateEntry();
+        se2.health = 20;
+        se2.subtract(se1);
+        assertEquals(Math.round(se1.health), 10);
+    }
+
+    @Test
     public void equals() throws Exception {
         StateEntry se1 = new StateEntry();
         StateEntry se2 = new StateEntry();

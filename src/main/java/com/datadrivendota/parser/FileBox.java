@@ -3,6 +3,8 @@ package com.datadrivendota.parser;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.services.dynamodbv2.xspec.S;
+import com.amazonaws.services.ec2.model.State;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -69,12 +71,6 @@ public class FileBox {
         this.stringTable.put(rowIndex, key);
     }
 
-    public void printStrings(){
-        for (Integer key: this.stringTable.keySet()) {
-            System.out.println(key+" "+this.stringTable.get(key));
-        }
-    }
-
     public HashMap<Integer, StateEntry> getPlayerFile(Integer slot){
         return this.files.get(slot);
     }
@@ -107,7 +103,7 @@ public class FileBox {
         this.mungeTimes();
         this.saveItemBuys();
         this.uploadBasicState();
-        this.uploadFiles();
+        this.uploadMergedState();
         this.purgeFiles();
     }
 
@@ -133,13 +129,70 @@ public class FileBox {
                 String value = om.writeValueAsString(stateEntryList);
                 byte[] data = gzipString(value);
                 String filename = makeFilename(slot.toString(), "statelog", "allstate");
-                writeS3(filename, data);
+//                writeS3(filename, data);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
         }
     }
+
+    private void uploadMergedState() {
+        ArrayList<StateEntry> radiant = new ArrayList<>();
+
+        HashMap<Integer, Integer> counts = new HashMap<>();
+        for (int slot = 0; slot < 5; slot++) {
+            for (Integer time : this.files.get(slot).keySet()){
+                if (this.files.get(slot).get(time).health != null){ // If the player has a hero
+                    Integer existing;
+                    try {
+                        existing = counts.get(time);
+                    } catch (NullPointerException e){
+                        existing = 0;
+                    }
+                    if (existing == null) existing = 0;  // Dunno why I need this, but I do.
+                    counts.put(time, existing+1);
+                }
+            }
+        }
+        List<Integer> validTimesList = new ArrayList<>();
+        for (Integer time : counts.keySet()){
+            if (counts.get(time)==5){
+                validTimesList.add(time);
+            }
+        }
+        Collections.sort(validTimesList);
+        for (Integer time : validTimesList){
+            StateEntry base = null;
+            for (int slot = 0; slot < 5; slot++) {
+                if (slot==0) base = (StateEntry) this.files.get(slot).get(time).clone(); // Adding only well defined on populated things.
+                base.add(this.files.get(slot).get(time));
+                base.offset_time = this.files.get(slot).get(time).offset_time;
+                base.tick_time= this.files.get(slot).get(time).tick_time;
+            }
+            radiant.add(base);
+        }
+
+        Comparator<StateEntry> comparator = new Comparator<StateEntry >() {
+            public int compare(StateEntry se1, StateEntry se2) {
+                return se1.offset_time - se2.offset_time;
+            }
+        };
+        Collections.sort(radiant, comparator);
+        System.out.print(radiant.size());
+        ObjectMapper om = new ObjectMapper();
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            String value = om.writeValueAsString(radiant);
+            byte[] data = gzipString(value);
+            String filename = makeFilename("radiant", "statelog", "allstate");
+            writeS3(filename, data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public String makeFilename(String dataslice, String log_type, String facet){
 
         // Explicit argument indices may be used to re-order output.

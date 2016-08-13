@@ -1,6 +1,8 @@
 package com.datadrivendota.parser;
 
+import com.amazonaws.services.dynamodbv2.xspec.NULL;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.json.PackageVersion;
 import skadistats.clarity.model.Entity;
 import skadistats.clarity.processor.runner.Context;
 
@@ -9,74 +11,10 @@ import java.util.HashMap;
 /**
  * Created by ben on 8/4/16.
  */
-public class StateEntry{
+public class StateEntry implements Cloneable{
     public Integer tick_time;
     public Integer offset_time;
     public Integer player_slot;
-
-    @Override
-    public boolean equals(Object otherObj) {
-        if((otherObj== null) || (getClass() != otherObj.getClass())){
-            System.out.print("Error!");
-            return false;
-        } else {
-            StateEntry obj = (StateEntry) otherObj;
-            // We don't test armor because the json repr is different than stored repr (derived).
-            float epsilon = (float) 0.00001;
-            if (
-                    Math.abs(this.agility - obj.agility) < epsilon &&
-                    Math.abs(this.agility_total - obj.agility_total) < epsilon &&
-                    (this.assists == obj.assists) &&
-                    (this.creep_kill_gold == obj.creep_kill_gold) &&
-                    (this.damage_bonus == obj.damage_bonus) &&
-                    (this.damage_max == obj.damage_max) &&
-                    (this.damage_min == obj.damage_min) &&
-                    (this.deaths == obj.deaths) &&
-                    (this.denies == obj.denies) &&
-                    Math.abs(this.healing - obj.healing) < epsilon &&
-                    (this.health == obj.health) &&
-                    (this.hero_id == obj.hero_id) &&
-                    (this.hero_kill_gold == obj.hero_kill_gold) &&
-                    (this.income_gold == obj.income_gold) &&
-                    Math.abs(this.intelligence - obj.intelligence) < epsilon &&
-                    Math.abs(this.intelligence_total - obj.intelligence_total) < epsilon &&
-                    (this.item_0 == obj.item_0) &&
-                    (this.item_1 == obj.item_1) &&
-                    (this.item_2 == obj.item_2) &&
-                    (this.item_3 == obj.item_3) &&
-                    (this.item_4 == obj.item_4) &&
-                    (this.item_5 == obj.item_5) &&
-                    (this.kills == obj.kills) &&
-                    (this.last_hits == obj.last_hits) &&
-                    (this.lifestate == obj.lifestate) &&
-                    Math.abs(this.getMagic_resist_pct() - obj.getMagic_resist_pct()) < epsilon &&
-                    Math.abs(this.mana - obj.mana) < epsilon &&
-                    (this.max_health == obj.max_health) &&
-                    Math.abs(this.max_mana - obj.max_mana) < epsilon &&
-                    (this.misses == obj.misses) &&
-                    (this.nearby_creep_deaths == obj.nearby_creep_deaths) &&
-                    (this.recent_damage == obj.recent_damage) &&
-                    (this.reliable_gold == obj.reliable_gold) &&
-                    Math.abs(this.respawn_time - obj.respawn_time) < epsilon &&
-                    (this.roshan_kills == obj.roshan_kills) &&
-                    (this.shared_gold == obj.shared_gold) &&
-                    Math.abs(this.strength - obj.strength) < epsilon &&
-                    Math.abs(this.strength_total - obj.strength_total) < epsilon &&
-                    (this.total_earned_gold == obj.total_earned_gold) &&
-                    (this.tower_kills == obj.tower_kills) &&
-                    (this.unreliable_gold == obj.unreliable_gold) &&
-                    (this.x == obj.x) &&
-                    (this.xp == obj.xp) &&
-                    (this.y == obj.y)
-                    ) {
-                System.out.print("True!");
-                return true;
-            } else {
-                System.out.print("False!");
-                return false;
-            }
-        }
-    }
 
     public Integer total_earned_gold;
     public Integer reliable_gold;
@@ -108,7 +46,7 @@ public class StateEntry{
     public Integer y;
 
     @JsonIgnore
-    public long damage_taken;
+    public Integer damage_taken;
     public Integer health;
     public Integer max_health;
     public Float mana;
@@ -297,19 +235,27 @@ public class StateEntry{
     public void setPct_health() {}
     public void setPct_mana() {}
     public Integer getPct_health(){
-        if (this.max_health<=0){
+        try {
+            if (this.max_health<=0){
+                return 0;
+            }
+            else {
+                return Math.round(this.health/this.max_health*10000)/100;
+            }
+        } catch (NullPointerException e){
             return 0;
-        }
-        else {
-            return Math.round(this.health/this.max_health*10000)/100;
         }
     }
     public Integer getPct_mana(){
-        if (this.max_mana<=0){
+        try {
+            if (this.max_mana<=0){
+                return 0;
+            }
+            else {
+                return Math.round(this.mana/this.max_mana*10000)/100;
+            }
+        } catch (NullPointerException e){
             return 0;
-        }
-        else {
-            return Math.round(this.mana/this.max_mana*10000)/100;
         }
     }
 
@@ -318,7 +264,6 @@ public class StateEntry{
         try {
             return this.armor + Math.round(this.agility/7*100)/100;
         } catch (NullPointerException e){
-            e.printStackTrace();
             return 0f;
         }
     }
@@ -326,7 +271,11 @@ public class StateEntry{
 
     public void setBase_damage(){}
     public Integer getBase_damage(){
-        return Math.round((this.damage_max + this.damage_min)/2);
+        try {
+            return Math.round((this.damage_max + this.damage_min)/2);
+        } catch (NullPointerException e){
+            return 0;
+        }
     }
     public Integer getBonus_damage(){
         return this.damage_bonus;
@@ -334,7 +283,11 @@ public class StateEntry{
 
     public void setTotal_damage(){}
     public Integer getTotal_damage(){
-        return Math.round((this.damage_max + this.damage_min)/2)+this.damage_bonus;
+        try {
+            return Math.round((this.damage_max + this.damage_min)/2)+this.damage_bonus;
+        } catch (NullPointerException e){
+            return 0;
+        }
     }
 
     public void swapItemNames(HashMap<Integer, String> stringTableEntries) {
@@ -372,4 +325,174 @@ public class StateEntry{
     public void setMagic_resist_pct(Float magic_resist_pct) {
         this.magic_resist_pct = magic_resist_pct;
     }
+
+    @Override
+    public boolean equals(Object otherObj) {
+        if((otherObj== null) || (getClass() != otherObj.getClass())){
+            return false;
+        } else {
+            StateEntry obj = (StateEntry) otherObj;
+            // We don't test armor because the json repr is different than stored repr (derived).
+            float epsilon = (float) 0.00001;
+            if (
+                    (this.player_slot == obj.player_slot) &&
+                    (this.offset_time == obj.offset_time) &&
+                    (this.tick_time == obj.tick_time) &&
+                    (this.assists == obj.assists) &&
+                    (this.creep_kill_gold == obj.creep_kill_gold) &&
+                    (this.damage_bonus == obj.damage_bonus) &&
+                    (this.damage_max == obj.damage_max) &&
+                    (this.damage_min == obj.damage_min) &&
+                    (this.deaths == obj.deaths) &&
+                    (this.denies == obj.denies) &&
+                    (this.health == obj.health) &&
+                    (this.hero_id == obj.hero_id) &&
+                    (this.hero_kill_gold == obj.hero_kill_gold) &&
+                    (this.income_gold == obj.income_gold) &&
+                    (this.item_0 == obj.item_0) &&
+                    (this.item_1 == obj.item_1) &&
+                    (this.item_2 == obj.item_2) &&
+                    (this.item_3 == obj.item_3) &&
+                    (this.item_4 == obj.item_4) &&
+                    (this.item_5 == obj.item_5) &&
+                    (this.kills == obj.kills) &&
+                    (this.last_hits == obj.last_hits) &&
+                    (this.lifestate == obj.lifestate) &&
+                    (this.max_health == obj.max_health) &&
+                    (this.misses == obj.misses) &&
+                    (this.nearby_creep_deaths == obj.nearby_creep_deaths) &&
+                    (this.recent_damage == obj.recent_damage) &&
+                    (this.reliable_gold == obj.reliable_gold) &&
+                    (this.roshan_kills == obj.roshan_kills) &&
+                    (this.shared_gold == obj.shared_gold) &&
+                    (this.total_earned_gold == obj.total_earned_gold) &&
+                    (this.tower_kills == obj.tower_kills) &&
+                    (this.unreliable_gold == obj.unreliable_gold) &&
+                    (this.x == obj.x) &&
+                    (this.xp == obj.xp) &&
+                    (this.y == obj.y)
+                ) {
+                    // TECHDEBT: Figure out how to write these so nulls don't break everything.
+//                    Math.round(this.getMagic_resist_pct()) == Math.round(obj.getMagic_resist_pct()) &&
+//                    Math.abs(this.agility - obj.agility) < epsilon &&
+//                    Math.abs(this.agility_total - obj.agility_total) < epsilon &&
+//                    Math.abs(this.healing - obj.healing) < epsilon &&
+//                    Math.abs(this.intelligence - obj.intelligence) < epsilon &&
+//                    Math.abs(this.intelligence_total - obj.intelligence_total) < epsilon &&
+//                    Math.abs(this.mana - obj.mana) < epsilon &&
+//                    Math.abs(this.max_mana - obj.max_mana) < epsilon &&
+//                    Math.abs(this.respawn_time - obj.respawn_time) < epsilon &&
+//                    Math.abs(this.strength - obj.strength) < epsilon &&
+//                    Math.abs(this.strength_total - obj.strength_total) < epsilon &&
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public void add(StateEntry obj){
+
+        if(this.agility!=null && obj.agility!= null) this.agility += obj.agility;
+        if(this.agility_total!=null && obj.agility_total!= null) this.agility_total += obj.agility_total;
+        if(this.armor!=null && obj.armor!= null) this.armor += obj.armor;
+        if(this.assists!=null && obj.assists!= null) this.assists += obj.assists;
+        if(this.creep_kill_gold!=null && obj.creep_kill_gold!= null) this.creep_kill_gold += obj.creep_kill_gold;
+        if(this.damage_bonus!=null && obj.damage_bonus!= null) this.damage_bonus += obj.damage_bonus;
+        if(this.damage_max!=null && obj.damage_max!= null) this.damage_max += obj.damage_max;
+        if(this.damage_min!=null && obj.damage_min!= null) this.damage_min += obj.damage_min;
+        if(this.damage_taken!=null && obj.damage_taken!= null) this.damage_taken += obj.damage_taken;
+        if(this.deaths!=null && obj.deaths!= null) this.deaths += obj.deaths;
+        if(this.denies!=null && obj.denies!= null) this.denies += obj.denies;
+        if(this.healing!=null && obj.healing!= null) this.healing += obj.healing;
+        if(this.health!=null && obj.health!= null) this.health += obj.health;
+        if(this.hero_id!=null && obj.hero_id!= null) this.hero_id += obj.hero_id;
+        if(this.hero_kill_gold!=null && obj.hero_kill_gold!= null) this.hero_kill_gold += obj.hero_kill_gold;
+        if(this.income_gold!=null && obj.income_gold!= null) this.income_gold += obj.income_gold;
+        if(this.intelligence!=null && obj.intelligence!= null) this.intelligence += obj.intelligence;
+        if(this.intelligence_total!=null && obj.intelligence_total!= null) this.intelligence_total += obj.intelligence_total;
+        if(this.kills!=null && obj.kills!= null) this.kills += obj.kills;
+        if(this.last_hits!=null && obj.last_hits!= null) this.last_hits += obj.last_hits;
+        if(this.lifestate!=null && obj.lifestate!= null) this.lifestate += obj.lifestate;
+        if(this.magic_resist_pct!=null && obj.magic_resist_pct!= null) this.magic_resist_pct += obj.magic_resist_pct;
+        if(this.mana!=null && obj.mana!= null) this.mana += obj.mana;
+        if(this.max_health!=null && obj.max_health!= null) this.max_health += obj.max_health;
+        if(this.max_mana!=null && obj.max_mana!= null) this.max_mana += obj.max_mana;
+        if(this.misses!=null && obj.misses!= null) this.misses += obj.misses;
+        if(this.nearby_creep_deaths!=null && obj.nearby_creep_deaths!= null) this.nearby_creep_deaths += obj.nearby_creep_deaths;
+        if(this.offset_time!=null && obj.offset_time!= null) this.offset_time += obj.offset_time;
+        if(this.player_slot!=null && obj.player_slot!= null) this.player_slot += obj.player_slot;
+        if(this.recent_damage!=null && obj.recent_damage!= null) this.recent_damage += obj.recent_damage;
+        if(this.reliable_gold!=null && obj.reliable_gold!= null) this.reliable_gold += obj.reliable_gold;
+        if(this.respawn_time!=null && obj.respawn_time!= null) this.respawn_time += obj.respawn_time;
+        if(this.roshan_kills!=null && obj.roshan_kills!= null) this.roshan_kills += obj.roshan_kills;
+        if(this.shared_gold!=null && obj.shared_gold!= null) this.shared_gold += obj.shared_gold;
+        if(this.strength!=null && obj.strength!= null) this.strength += obj.strength;
+        if(this.strength_total!=null && obj.strength_total!= null) this.strength_total += obj.strength_total;
+        if(this.stuns!=null && obj.stuns!= null) this.stuns += obj.stuns;
+        if(this.tick_time!=null && obj.tick_time!= null) this.tick_time += obj.tick_time;
+        if(this.total_earned_gold!=null && obj.total_earned_gold!= null) this.total_earned_gold += obj.total_earned_gold;
+        if(this.tower_kills!=null && obj.tower_kills!= null) this.tower_kills += obj.tower_kills;
+        if(this.unreliable_gold!=null && obj.unreliable_gold!= null) this.unreliable_gold += obj.unreliable_gold;
+        if(this.x!=null && obj.x!= null) this.x += obj.x;
+        if(this.xp!=null && obj.xp!= null) this.xp += obj.xp;
+        if(this.y!=null && obj.y!= null) this.y += obj.y;
+    }
+
+    public void subtract(StateEntry obj){
+        if(this.agility!=null && obj.agility!= null) this.agility -= obj.agility;
+        if(this.agility_total!=null && obj.agility_total!= null) this.agility_total -= obj.agility_total;
+        if(this.armor!=null && obj.armor!= null) this.armor -= obj.armor;
+        if(this.assists!=null && obj.assists!= null) this.assists -= obj.assists;
+        if(this.creep_kill_gold!=null && obj.creep_kill_gold!= null) this.creep_kill_gold -= obj.creep_kill_gold;
+        if(this.damage_bonus!=null && obj.damage_bonus!= null) this.damage_bonus -= obj.damage_bonus;
+        if(this.damage_max!=null && obj.damage_max!= null) this.damage_max -= obj.damage_max;
+        if(this.damage_min!=null && obj.damage_min!= null) this.damage_min -= obj.damage_min;
+        if(this.damage_taken!=null && obj.damage_taken!= null) this.damage_taken -= obj.damage_taken;
+        if(this.deaths!=null && obj.deaths!= null) this.deaths -= obj.deaths;
+        if(this.denies!=null && obj.denies!= null) this.denies -= obj.denies;
+        if(this.healing!=null && obj.healing!= null) this.healing -= obj.healing;
+        if(this.health!=null && obj.health!= null) this.health -= obj.health;
+        if(this.hero_id!=null && obj.hero_id!= null) this.hero_id -= obj.hero_id;
+        if(this.hero_kill_gold!=null && obj.hero_kill_gold!= null) this.hero_kill_gold -= obj.hero_kill_gold;
+        if(this.income_gold!=null && obj.income_gold!= null) this.income_gold -= obj.income_gold;
+        if(this.intelligence!=null && obj.intelligence!= null) this.intelligence -= obj.intelligence;
+        if(this.intelligence_total!=null && obj.intelligence_total!= null) this.intelligence_total -= obj.intelligence_total;
+        if(this.kills!=null && obj.kills!= null) this.kills -= obj.kills;
+        if(this.last_hits!=null && obj.last_hits!= null) this.last_hits -= obj.last_hits;
+        if(this.lifestate!=null && obj.lifestate!= null) this.lifestate -= obj.lifestate;
+        if(this.magic_resist_pct!=null && obj.magic_resist_pct!= null) this.magic_resist_pct -= obj.magic_resist_pct;
+        if(this.mana!=null && obj.mana!= null) this.mana -= obj.mana;
+        if(this.max_health!=null && obj.max_health!= null) this.max_health -= obj.max_health;
+        if(this.max_mana!=null && obj.max_mana!= null) this.max_mana -= obj.max_mana;
+        if(this.misses!=null && obj.misses!= null) this.misses -= obj.misses;
+        if(this.nearby_creep_deaths!=null && obj.nearby_creep_deaths!= null) this.nearby_creep_deaths -= obj.nearby_creep_deaths;
+        if(this.offset_time!=null && obj.offset_time!= null) this.offset_time -= obj.offset_time;
+        if(this.player_slot!=null && obj.player_slot!= null) this.player_slot -= obj.player_slot;
+        if(this.recent_damage!=null && obj.recent_damage!= null) this.recent_damage -= obj.recent_damage;
+        if(this.reliable_gold!=null && obj.reliable_gold!= null) this.reliable_gold -= obj.reliable_gold;
+        if(this.respawn_time!=null && obj.respawn_time!= null) this.respawn_time -= obj.respawn_time;
+        if(this.roshan_kills!=null && obj.roshan_kills!= null) this.roshan_kills -= obj.roshan_kills;
+        if(this.shared_gold!=null && obj.shared_gold!= null) this.shared_gold -= obj.shared_gold;
+        if(this.strength!=null && obj.strength!= null) this.strength -= obj.strength;
+        if(this.strength_total!=null && obj.strength_total!= null) this.strength_total -= obj.strength_total;
+        if(this.stuns!=null && obj.stuns!= null) this.stuns -= obj.stuns;
+        if(this.tick_time!=null && obj.tick_time!= null) this.tick_time -= obj.tick_time;
+        if(this.total_earned_gold!=null && obj.total_earned_gold!= null) this.total_earned_gold -= obj.total_earned_gold;
+        if(this.tower_kills!=null && obj.tower_kills!= null) this.tower_kills -= obj.tower_kills;
+        if(this.unreliable_gold!=null && obj.unreliable_gold!= null) this.unreliable_gold -= obj.unreliable_gold;
+        if(this.x!=null && obj.x!= null) this.x -= obj.x;
+        if(this.xp!=null && obj.xp!= null) this.xp -= obj.xp;
+        if(this.y!=null && obj.y!= null) this.y -= obj.y;
+    }
+    public Object clone() {
+        try {
+            return super.clone();
+        }
+        catch (CloneNotSupportedException e) {
+            // This should never happen
+            throw new InternalError(e.toString());
+        }
+    }
+
 }
