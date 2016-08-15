@@ -3,12 +3,14 @@ package com.datadrivendota.parser;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
-import com.amazonaws.services.dynamodbv2.xspec.S;
+import com.amazonaws.services.ec2.model.State;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
@@ -106,7 +108,86 @@ public class FileBox {
         this.setBasicState();
         this.setMergedState(0, 4, "radiant");
         this.setMergedState(5, 9, "dire");
-        this.purgeFiles();
+        this.setDiffState("radiant-dire", "diff");
+        this.setDiffState("dire-radiant", "negdiff");
+    }
+
+    private void setDiffState(String direction, String side) {
+        HashMap<Integer, Integer> counts = new HashMap<>();
+        ArrayList<StateEntry> radiant_ary = this.getOutputFileStateArray(this.makeFilename("radiant", "statelog", "allstate"));
+        HashMap<Integer, StateEntry> radiant = new HashMap<>();
+        for (StateEntry entry : radiant_ary){
+            radiant.put(entry.tick_time, entry);
+        }
+        ArrayList<StateEntry> dire_ary = this.getOutputFileStateArray(this.makeFilename("dire", "statelog", "allstate"));
+        HashMap<Integer, StateEntry> dire= new HashMap<>();
+        for (StateEntry entry : dire_ary){
+            dire.put(entry.tick_time, entry);
+        }
+        for (Integer time : radiant.keySet()) {
+            if (radiant .get(time).health != null) { // If the player has a hero
+                Integer existing;
+                try {
+                    existing = counts.get(time);
+                } catch (NullPointerException e) {
+                    existing = 0;
+                }
+                if (existing == null) existing = 0;  // Dunno why I need this, but I do.
+                counts.put(time, existing + 1);
+            }
+        }
+
+        for (Integer time : dire.keySet()) {
+            if (radiant.get(time).health != null) { // If the player has a hero
+                Integer existing;
+                try {
+                    existing = counts.get(time);
+                } catch (NullPointerException e) {
+                    existing = 0;
+                }
+                if (existing == null) existing = 0;  // Dunno why I need this, but I do.
+                counts.put(time, existing + 1);
+            }
+        }
+
+        List<Integer> validTimesList = new ArrayList<>();
+        for (Integer time : counts.keySet()){
+            if (counts.get(time)==2){
+                validTimesList.add(time);
+            }
+        }
+        Collections.sort(validTimesList);
+        ArrayList<StateEntry> side_states = new ArrayList<>();
+        for (Integer time : validTimesList){
+            StateEntry base = null;
+            if (direction=="radiant-dire") {
+                base = (StateEntry) radiant.get(time).clone(); // Adding only well defined on populated things.
+                base.subtract(dire.get(time));
+            } else {
+                base = (StateEntry) dire.get(time).clone(); // Adding only well defined on populated things.
+                base.subtract(radiant.get(time));
+            }
+            side_states.add(base);
+        }
+
+        Comparator<StateEntry> comparator = new Comparator<StateEntry >() {
+            public int compare(StateEntry se1, StateEntry se2) {
+                return se1.offset_time - se2.offset_time;
+            }
+        };
+        Collections.sort(side_states, comparator);
+        ObjectMapper om = new ObjectMapper();
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            String value = om.writeValueAsString(side_states);
+            byte[] data = gzipString(value);
+            System.out.print("Foo");
+            String filename = makeFilename(side, "statelog", "allstate");
+            this.output_files.put(filename, data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void setBasicState() {
@@ -165,7 +246,7 @@ public class FileBox {
         Collections.sort(validTimesList);
         for (Integer time : validTimesList){
             StateEntry base = null;
-            for (int slot = startIndex; slot < endIndex; slot++) {
+            for (int slot = startIndex; slot <= endIndex; slot++) {
                 if (slot==startIndex) base = (StateEntry) this.files.get(slot).get(time).clone(); // Adding only well defined on populated things.
                 if (slot!=startIndex) base.add(this.files.get(slot).get(time));
                 base.offset_time = this.files.get(slot).get(time).offset_time;
@@ -211,7 +292,6 @@ public class FileBox {
 
     public String makeFilename(String dataslice, String log_type, String facet){
 
-        // Explicit argument indices may be used to re-order output.
         return String.format("%s_%s_%s_%s_v%s.json.gz",
                 this.match_id,
                 dataslice,
@@ -259,12 +339,6 @@ public class FileBox {
     }
 
     /**
-     *  JSONify the postprocessed POJOs.
-     */
-    private void generateJsoanFiles(){
-    }
-
-    /**
      *  Write the JSON to S3.
      */
     public void uploadFiles(){
@@ -272,13 +346,6 @@ public class FileBox {
             System.out.println("Uploading "+filename);
             writeS3(filename, this.output_files.get(filename));
         }
-
-    }
-
-    /**
-     *  Delete the JSON files after upload.
-     */
-    private void purgeFiles(){
 
     }
 
@@ -295,13 +362,22 @@ public class FileBox {
         return compressedBytes;
     }
 
-
-    public ArrayList<StateEntry> getOutputFileStateArray(String filename) throws IOException {
+    public ArrayList<StateEntry> getOutputFileStateArray(String filename) {
         ObjectMapper om = new ObjectMapper();
         byte[] compressed = this.output_files.get(filename);
-        ArrayList<StateEntry> stateEntryList = om.readValue(this.ungzipString(compressed), ArrayList<StateEntry>);
+        ArrayList<StateEntry> stateEntryList = new ArrayList<>();
+        ;
+        try {
+            stateEntryList = om.readValue(
+                    this.ungzipString(compressed),
+                    new TypeReference<ArrayList<StateEntry>>() {}
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return stateEntryList;
     }
+
 
     public String ungzipString(byte[] compressed) throws IOException {
         final int BUFFER_SIZE = 32;
@@ -369,14 +445,6 @@ public class FileBox {
     public void setMatch_id(BigInteger match_id) {
         this.match_id = match_id;
     }
-    public HashMap<String, byte[]> getOutput_data(String key) {
-        ObjectMapper om = new ObjectMapper();
-        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            String value = om.writeValueAsString(side_states);
-            byte[] data = gzipString(value);
 
-        return output_files.get(key);
-    }
 
 }

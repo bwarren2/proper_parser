@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 
@@ -24,7 +25,7 @@ public class ParserTest {
 
         filebox.setMatch_id(new BigInteger("2549583869"));
         filebox.handle();
-        filebox.uploadFiles();
+//        filebox.uploadFiles();
 
         assertEquals(Math.round(filebox.getPlayerFile(0).get(1000).doubleMana()), 224);
         assertEquals(Math.round(filebox.getPlayerFile(1).get(1000).doubleMana()), 67);
@@ -40,10 +41,13 @@ public class ParserTest {
         assertEquals(Math.round(filebox.getPlayerFile(9).get(1000).tick_time), 1000);
         assertEquals(Math.round(filebox.getPlayerFile(9).get(1000).offset_time), 291);
 
-        assertEquals(18, filebox.getOutputFileStateArray(filebox.makeFilename("radiant", "statelog", "allstate")).get(3587).kills);
-//        assertEquals(28, filebox.getOutputFileStateArray("dire", "statelog", "allstate").get(3587).kills);
-//        assertEquals(28, filebox.getOutputFileStateArray("radiant", "statelog", "allstate").get(3587).deaths);
-//        assertEquals(71, filebox.getOutputFileStateArray("dire", "statelog", "allstate").get(3587).deaths);
+        assertEquals(18, (int) filebox.getOutputFileStateArray(filebox.makeFilename("radiant", "statelog", "allstate")).get(3141).kills);
+        assertEquals(28, (int) filebox.getOutputFileStateArray(filebox.makeFilename("dire", "statelog", "allstate")).get(3141).kills);
+        assertEquals(29, (int) filebox.getOutputFileStateArray(filebox.makeFilename("radiant", "statelog", "allstate")).get(3141).deaths);
+        assertEquals(71, (int) filebox.getOutputFileStateArray(filebox.makeFilename("dire", "statelog", "allstate")).get(3141).assists);
+
+        assertEquals(-10, (int) filebox.getOutputFileStateArray(filebox.makeFilename("diff", "statelog", "allstate")).get(3141).kills);
+        assertEquals(43, (int) filebox.getOutputFileStateArray(filebox.makeFilename("negdiff", "statelog", "allstate")).get(3141).assists);
 
         assertEquals(filebox.getPlayerFile(0).get(3587).item_0, "item_phase_boots");
         assertEquals(filebox.getPlayerFile(1).get(3587).item_0, "item_sphere");

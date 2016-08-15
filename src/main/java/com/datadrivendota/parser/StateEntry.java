@@ -2,6 +2,7 @@ package com.datadrivendota.parser;
 
 import com.amazonaws.services.dynamodbv2.xspec.NULL;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.json.PackageVersion;
 import skadistats.clarity.model.Entity;
 import skadistats.clarity.processor.runner.Context;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 /**
  * Created by ben on 8/4/16.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class StateEntry implements Cloneable{
     public Integer tick_time;
     public Integer offset_time;
