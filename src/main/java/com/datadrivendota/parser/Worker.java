@@ -26,7 +26,7 @@ public class Worker {
 //                replay.purgeFile();  // Remove the local replay file.
                 filebox.setMatch_id(request.getMatch_id());
                 filebox.handle();
-//                filebox.upload();
+                filebox.uploadFiles();
 //
 //                manager.sendResp(filename, request.getMatch_id());
 //                manager.ackDelivery();

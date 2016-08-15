@@ -4,7 +4,6 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.dynamodbv2.xspec.S;
-import com.amazonaws.services.ec2.model.State;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -14,11 +13,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -45,6 +44,8 @@ public class FileBox {
     public HashMap<Integer, String> stringTable = new HashMap<>();
     private String winner;
     private BigInteger match_id;
+
+    private HashMap<String, byte[]> output_files = new HashMap<>();
 
     public FileBox() {
     }
@@ -102,12 +103,13 @@ public class FileBox {
     public void handle() {
         this.mungeTimes();
         this.saveItemBuys();
-        this.uploadBasicState();
-        this.uploadMergedState();
+        this.setBasicState();
+        this.setMergedState(0, 4, "radiant");
+        this.setMergedState(5, 9, "dire");
         this.purgeFiles();
     }
 
-    private void uploadBasicState() {
+    private void setBasicState() {
         for (Integer slot : this.files.keySet()){
             HashMap<Integer, StateEntry> statemap = this.files.get(slot);
             List<StateEntry> stateEntryList = new ArrayList<StateEntry>();
@@ -116,32 +118,31 @@ public class FileBox {
                     stateEntryList.add(se);
                 }
             }
-
             Comparator<StateEntry > comparator = new Comparator<StateEntry >() {
                 public int compare(StateEntry se1, StateEntry se2) {
                     return se1.offset_time - se2.offset_time;
                 }
             };
             Collections.sort(stateEntryList, comparator);
+
             ObjectMapper om = new ObjectMapper();
             om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            String filename = makeFilename(slot, "statelog", "allstate");
             try {
                 String value = om.writeValueAsString(stateEntryList);
                 byte[] data = gzipString(value);
-                String filename = makeFilename(slot.toString(), "statelog", "allstate");
-//                writeS3(filename, data);
+                this.output_files.put(filename, data);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
     }
 
-    private void uploadMergedState() {
-        ArrayList<StateEntry> radiant = new ArrayList<>();
+    private void setMergedState(Integer startIndex, Integer endIndex, String side) {
+        ArrayList<StateEntry> side_states = new ArrayList<>();
 
         HashMap<Integer, Integer> counts = new HashMap<>();
-        for (int slot = 0; slot < 5; slot++) {
+        for (int slot = startIndex; slot <= endIndex; slot++) {
             for (Integer time : this.files.get(slot).keySet()){
                 if (this.files.get(slot).get(time).health != null){ // If the player has a hero
                     Integer existing;
@@ -164,13 +165,13 @@ public class FileBox {
         Collections.sort(validTimesList);
         for (Integer time : validTimesList){
             StateEntry base = null;
-            for (int slot = 0; slot < 5; slot++) {
-                if (slot==0) base = (StateEntry) this.files.get(slot).get(time).clone(); // Adding only well defined on populated things.
-                base.add(this.files.get(slot).get(time));
+            for (int slot = startIndex; slot < endIndex; slot++) {
+                if (slot==startIndex) base = (StateEntry) this.files.get(slot).get(time).clone(); // Adding only well defined on populated things.
+                if (slot!=startIndex) base.add(this.files.get(slot).get(time));
                 base.offset_time = this.files.get(slot).get(time).offset_time;
                 base.tick_time= this.files.get(slot).get(time).tick_time;
             }
-            radiant.add(base);
+            side_states.add(base);
         }
 
         Comparator<StateEntry> comparator = new Comparator<StateEntry >() {
@@ -178,18 +179,33 @@ public class FileBox {
                 return se1.offset_time - se2.offset_time;
             }
         };
-        Collections.sort(radiant, comparator);
-        System.out.print(radiant.size());
+        Collections.sort(side_states, comparator);
         ObjectMapper om = new ObjectMapper();
         om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
-            String value = om.writeValueAsString(radiant);
+            String value = om.writeValueAsString(side_states);
             byte[] data = gzipString(value);
-            String filename = makeFilename("radiant", "statelog", "allstate");
-            writeS3(filename, data);
+            String filename = makeFilename(side, "statelog", "allstate");
+            this.output_files.put(filename, data);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+    }
+
+    public String makeFilename(Integer slot, String log_type, String facet){
+        Integer player_slot;
+//        5-9 -> 128 132 for dire;
+        if (slot>4) player_slot = slot + 123;
+        else player_slot = slot;
+        // Explicit argument indices may be used to re-order output.
+        return String.format("%s_%s_%s_%s_v%s.json.gz",
+                this.match_id,
+                player_slot,
+                log_type,
+                facet,
+                System.getenv("PARSER_VERSION")
+        );
 
     }
 
@@ -245,13 +261,17 @@ public class FileBox {
     /**
      *  JSONify the postprocessed POJOs.
      */
-    private void generateJsonFiles(){
+    private void generateJsoanFiles(){
     }
 
     /**
      *  Write the JSON to S3.
      */
-    private void uploadFiles(){
+    public void uploadFiles(){
+        for (String filename : this.output_files.keySet()){
+            System.out.println("Uploading "+filename);
+            writeS3(filename, this.output_files.get(filename));
+        }
 
     }
 
@@ -273,6 +293,29 @@ public class FileBox {
 
         byte[] compressedBytes = out.toByteArray();
         return compressedBytes;
+    }
+
+
+    public ArrayList<StateEntry> getOutputFileStateArray(String filename) throws IOException {
+        ObjectMapper om = new ObjectMapper();
+        byte[] compressed = this.output_files.get(filename);
+        ArrayList<StateEntry> stateEntryList = om.readValue(this.ungzipString(compressed), ArrayList<StateEntry>);
+        return stateEntryList;
+    }
+
+    public String ungzipString(byte[] compressed) throws IOException {
+        final int BUFFER_SIZE = 32;
+        ByteArrayInputStream is = new ByteArrayInputStream(compressed);
+        GZIPInputStream gis = new GZIPInputStream(is, BUFFER_SIZE);
+        StringBuilder string = new StringBuilder();
+        byte[] data = new byte[BUFFER_SIZE];
+        int bytesRead;
+        while ((bytesRead = gis.read(data)) != -1) {
+            string.append(new String(data, 0, bytesRead));
+        }
+        gis.close();
+        is.close();
+        return string.toString();
     }
 
     public void writeS3(String filename, byte[] data){
@@ -326,4 +369,14 @@ public class FileBox {
     public void setMatch_id(BigInteger match_id) {
         this.match_id = match_id;
     }
+    public HashMap<String, byte[]> getOutput_data(String key) {
+        ObjectMapper om = new ObjectMapper();
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            String value = om.writeValueAsString(side_states);
+            byte[] data = gzipString(value);
+
+        return output_files.get(key);
+    }
+
 }

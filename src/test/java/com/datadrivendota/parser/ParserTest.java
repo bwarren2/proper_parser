@@ -24,6 +24,7 @@ public class ParserTest {
 
         filebox.setMatch_id(new BigInteger("2549583869"));
         filebox.handle();
+        filebox.uploadFiles();
 
         assertEquals(Math.round(filebox.getPlayerFile(0).get(1000).doubleMana()), 224);
         assertEquals(Math.round(filebox.getPlayerFile(1).get(1000).doubleMana()), 67);
@@ -39,6 +40,11 @@ public class ParserTest {
         assertEquals(Math.round(filebox.getPlayerFile(9).get(1000).tick_time), 1000);
         assertEquals(Math.round(filebox.getPlayerFile(9).get(1000).offset_time), 291);
 
+        assertEquals(18, filebox.getOutputFileStateArray(filebox.makeFilename("radiant", "statelog", "allstate")).get(3587).kills);
+//        assertEquals(28, filebox.getOutputFileStateArray("dire", "statelog", "allstate").get(3587).kills);
+//        assertEquals(28, filebox.getOutputFileStateArray("radiant", "statelog", "allstate").get(3587).deaths);
+//        assertEquals(71, filebox.getOutputFileStateArray("dire", "statelog", "allstate").get(3587).deaths);
+
         assertEquals(filebox.getPlayerFile(0).get(3587).item_0, "item_phase_boots");
         assertEquals(filebox.getPlayerFile(1).get(3587).item_0, "item_sphere");
         assertEquals(filebox.getPlayerFile(2).get(3587).item_0, "item_force_staff");
@@ -49,6 +55,8 @@ public class ParserTest {
         assertEquals(filebox.getPlayerFile(7).get(3587).item_0, "item_abyssal_blade");
         assertEquals(filebox.getPlayerFile(8).get(3587).item_0, "item_black_king_bar");
         assertEquals(filebox.getPlayerFile(9).get(3587).item_0, "item_magic_wand");
+
+
 
         ObjectMapper om = new ObjectMapper();
         om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

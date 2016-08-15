@@ -63,9 +63,8 @@ public class Replay {
         System.out.println("Getting file data: " + filename);
 
         File destination = new File(filename);
-//      TECHDEBT: Should be this signature, but maven can't find the fucking signature.
-//        copyURLToFile(query_url, destination, 2000, 2000);
-        FileUtils.copyURLToFile(query_url, destination);
+//      TECHDEBT: Should be this signature, but maven can't find the signature.
+//      copyURLToFile(query_url, destination, 2000, 2000);
 
         System.out.println("Got File");
 
