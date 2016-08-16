@@ -181,7 +181,6 @@ public class FileBox {
         try {
             String value = om.writeValueAsString(side_states);
             byte[] data = gzipString(value);
-            System.out.print("Foo");
             String filename = makeFilename(side, "statelog", "allstate");
             this.output_files.put(filename, data);
         } catch (IOException e) {

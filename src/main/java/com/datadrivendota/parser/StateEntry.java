@@ -337,42 +337,42 @@ public class StateEntry implements Cloneable{
             // We don't test armor because the json repr is different than stored repr (derived).
             float epsilon = (float) 0.00001;
             if (
-                    (this.player_slot == obj.player_slot) &&
-                    (this.offset_time == obj.offset_time) &&
-                    (this.tick_time == obj.tick_time) &&
-                    (this.assists == obj.assists) &&
-                    (this.creep_kill_gold == obj.creep_kill_gold) &&
-                    (this.damage_bonus == obj.damage_bonus) &&
-                    (this.damage_max == obj.damage_max) &&
-                    (this.damage_min == obj.damage_min) &&
-                    (this.deaths == obj.deaths) &&
-                    (this.denies == obj.denies) &&
-                    (this.health == obj.health) &&
-                    (this.hero_id == obj.hero_id) &&
-                    (this.hero_kill_gold == obj.hero_kill_gold) &&
-                    (this.income_gold == obj.income_gold) &&
-                    (this.item_0 == obj.item_0) &&
-                    (this.item_1 == obj.item_1) &&
-                    (this.item_2 == obj.item_2) &&
-                    (this.item_3 == obj.item_3) &&
-                    (this.item_4 == obj.item_4) &&
-                    (this.item_5 == obj.item_5) &&
-                    (this.kills == obj.kills) &&
-                    (this.last_hits == obj.last_hits) &&
-                    (this.lifestate == obj.lifestate) &&
-                    (this.max_health == obj.max_health) &&
-                    (this.misses == obj.misses) &&
-                    (this.nearby_creep_deaths == obj.nearby_creep_deaths) &&
-                    (this.recent_damage == obj.recent_damage) &&
-                    (this.reliable_gold == obj.reliable_gold) &&
-                    (this.roshan_kills == obj.roshan_kills) &&
-                    (this.shared_gold == obj.shared_gold) &&
-                    (this.total_earned_gold == obj.total_earned_gold) &&
-                    (this.tower_kills == obj.tower_kills) &&
-                    (this.unreliable_gold == obj.unreliable_gold) &&
-                    (this.x == obj.x) &&
-                    (this.xp == obj.xp) &&
-                    (this.y == obj.y)
+                    (this.player_slot == obj.player_slot || this.player_slot.equals(obj.player_slot) ) &&
+                    (this.offset_time == obj.offset_time || this.offset_time.equals(obj.offset_time)) &&
+                    (this.tick_time == obj.tick_time|| this.tick_time.equals(obj.tick_time)) &&
+                    (this.assists == obj.assists|| this.assists.equals(obj.assists)) &&
+                    (this.creep_kill_gold == obj.creep_kill_gold || this.creep_kill_gold.equals(obj.creep_kill_gold)) &&
+                    (this.damage_bonus == obj.damage_bonus|| this.damage_bonus.equals(obj.damage_bonus)) &&
+                    (this.damage_max == obj.damage_max || this.damage_max.equals(obj.damage_max)) &&
+                    (this.damage_min == obj.damage_min || this.damage_min.equals(obj.damage_min)) &&
+                    (this.deaths == obj.deaths|| this.deaths.equals(obj.deaths)) &&
+                    (this.denies == obj.denies|| this.denies.equals(obj.denies)) &&
+                    (this.health == obj.health || (this.health.equals(obj.health))) &&
+                    (this.hero_id == obj.hero_id|| this.hero_id.equals(obj.hero_id)) &&
+                    (this.hero_kill_gold == obj.hero_kill_gold || this.hero_kill_gold.equals(obj.hero_kill_gold)) &&
+                    (this.income_gold == obj.income_gold|| this.income_gold.equals(obj.income_gold)) &&
+                    (this.item_0 == obj.item_0 || this.item_0.equals(obj.item_0)) &&
+                    (this.item_1 == obj.item_1 || this.item_1.equals(obj.item_1)) &&
+                    (this.item_2 == obj.item_2 || this.item_2.equals(obj.item_2)) &&
+                    (this.item_3 == obj.item_3 || this.item_3.equals(obj.item_3)) &&
+                    (this.item_4 == obj.item_4 || this.item_4.equals(obj.item_4)) &&
+                    (this.item_5 == obj.item_5 || this.item_5.equals(obj.item_5)) &&
+                    (this.kills == obj.kills|| this.kills.equals(obj.kills)) &&
+                    (this.last_hits == obj.last_hits || this.last_hits.equals(obj.last_hits)) &&
+                    (this.lifestate == obj.lifestate|| this.lifestate.equals(obj.lifestate)) &&
+                    (this.max_health == obj.max_health || this.max_health.equals(obj.max_health)) &&
+                    (this.misses == obj.misses|| this.misses.equals(obj.misses)) &&
+                    (this.nearby_creep_deaths == obj.nearby_creep_deaths|| this.nearby_creep_deaths.equals(obj.nearby_creep_deaths)) &&
+                    (this.recent_damage == obj.recent_damage|| this.recent_damage.equals(obj.recent_damage)) &&
+                    (this.reliable_gold == obj.reliable_gold|| this.reliable_gold.equals(obj.reliable_gold)) &&
+                    (this.roshan_kills == obj.roshan_kills|| this.roshan_kills.equals(obj.roshan_kills)) &&
+                    (this.shared_gold == obj.shared_gold|| this.shared_gold.equals(obj.shared_gold)) &&
+                    (this.total_earned_gold == obj.total_earned_gold || this.total_earned_gold.equals(obj.total_earned_gold)) &&
+                    (this.tower_kills == obj.tower_kills|| this.tower_kills.equals(obj.tower_kills)) &&
+                    (this.unreliable_gold == obj.unreliable_gold|| this.unreliable_gold.equals(obj.unreliable_gold)) &&
+                    (this.x == obj.x|| this.x.equals(obj.x)) &&
+                    (this.xp == obj.xp|| this.xp.equals(obj.xp)) &&
+                    (this.y == obj.y||this.y.equals(obj.y))
                 ) {
                     // TECHDEBT: Figure out how to write these so nulls don't break everything.
 //                    Math.round(this.getMagic_resist_pct()) == Math.round(obj.getMagic_resist_pct()) &&
@@ -393,6 +393,45 @@ public class StateEntry implements Cloneable{
         }
     }
 
+    public void diff(StateEntry obj){
+        if (!this.player_slot.equals(obj.player_slot)) System.out.println("obj.player_slot");
+        if (!this.offset_time.equals(obj.offset_time)) System.out.println("obj.offset_time");
+        if (!this.tick_time.equals(obj.tick_time)) System.out.println("obj.tick_time");
+        if (this.assists != obj.assists) System.out.println("obj.assists");
+        if (!this.creep_kill_gold.equals(obj.creep_kill_gold)) System.out.println("obj.creep_kill_gold");
+        if (this.damage_bonus != obj.damage_bonus) System.out.println("obj.damage_bonus");
+        if (!this.damage_max.equals(obj.damage_max)) System.out.println("obj.damage_max");
+        if (!this.damage_min.equals(obj.damage_min)) System.out.println("obj.damage_min");
+        if (this.deaths != obj.deaths) System.out.println("obj.deaths");
+        if (this.denies != obj.denies) System.out.println("obj.denies");
+        if (!this.health.equals(obj.health)) System.out.println("obj.health");
+        if (this.hero_id != obj.hero_id) System.out.println("obj.hero_id");
+        if (!this.hero_kill_gold.equals(obj.hero_kill_gold)) System.out.println("obj.hero_kill_gold");
+        if (!this.income_gold.equals(obj.income_gold)) System.out.println("obj.income_gold");
+        if (!this.item_0.equals(obj.item_0)) System.out.println("obj.item_0");
+        if (!this.item_1.equals(obj.item_1)) System.out.println("obj.item_1");
+        if (!this.item_2.equals(obj.item_2)) System.out.println("obj.item_2");
+        if (!this.item_3.equals(obj.item_3)) System.out.println("obj.item_3");
+        if (!this.item_4.equals(obj.item_4)) System.out.println("obj.item_4");
+        if (!this.item_5.equals(obj.item_5)) System.out.println("obj.item_5");
+        if (this.kills != obj.kills) System.out.println("obj.kills");
+        if (!this.last_hits.equals(obj.last_hits)) System.out.println("obj.last_hits");
+        if (this.lifestate != obj.lifestate) System.out.println("obj.lifestate");
+        if (!this.max_health.equals(obj.max_health)) System.out.println("obj.max_health");
+        if (this.misses != obj.misses) System.out.println("obj.misses");
+        if (!this.nearby_creep_deaths.equals(obj.nearby_creep_deaths)) System.out.println("obj.nearby_creep_deaths");
+        if (this.recent_damage != obj.recent_damage) System.out.println("obj.recent_damage");
+        if (!this.reliable_gold.equals(obj.reliable_gold)) System.out.println("obj.reliable_gold");
+        if (this.roshan_kills != obj.roshan_kills) System.out.println("obj.roshan_kills");
+        if (this.shared_gold != obj.shared_gold) System.out.println("obj.shared_gold");
+        if (!this.total_earned_gold.equals(obj.total_earned_gold)) System.out.println("obj.total_earned_gold");
+        if (this.tower_kills != obj.tower_kills) System.out.println("obj.tower_kills");
+        if (!this.unreliable_gold.equals(obj.unreliable_gold)) System.out.println("obj.unreliable_gold");
+        if (!this.x.equals(obj.x)) System.out.println("obj.x");
+        if (!this.xp.equals(obj.xp)) System.out.println("obj.xp");
+        if (this.y != obj.y) System.out.print("obj.y");
+    }
+    
     public void add(StateEntry obj){
 
         if(this.agility!=null && obj.agility!= null) this.agility += obj.agility;

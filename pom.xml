@@ -34,6 +34,12 @@
         </repository>
     </repositories>
     <dependencies>
+        <dependency>
+            <groupId>org.javers</groupId>
+            <artifactId>javers-core</artifactId>
+            <version>2.1.1</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.slf4j</groupId>

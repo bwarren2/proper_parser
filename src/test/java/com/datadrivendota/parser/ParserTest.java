@@ -2,6 +2,8 @@ package com.datadrivendota.parser;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
 import org.junit.Test;
 
 import java.io.File;
@@ -25,7 +27,6 @@ public class ParserTest {
 
         filebox.setMatch_id(new BigInteger("2549583869"));
         filebox.handle();
-//        filebox.uploadFiles();
 
         assertEquals(Math.round(filebox.getPlayerFile(0).get(1000).doubleMana()), 224);
         assertEquals(Math.round(filebox.getPlayerFile(1).get(1000).doubleMana()), 67);
@@ -60,15 +61,13 @@ public class ParserTest {
         assertEquals(filebox.getPlayerFile(8).get(3587).item_0, "item_black_king_bar");
         assertEquals(filebox.getPlayerFile(9).get(3587).item_0, "item_magic_wand");
 
-
-
         ObjectMapper om = new ObjectMapper();
         om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StateEntry expected = om.readValue(new File("result.json"), StateEntry.class);
         StateEntry actual = filebox.getPlayerFile(7).get(3587);
-        expected.armor = 1f;
-        actual.armor = 1f;
-        // TECHDEBT: Why does this fail?
-//        assertEquals(expected, actual);
+
+        assertEquals(true, actual.equals(expected));
+        // Want to hand-test the uploaded files?
+        //        filebox.uploadFiles();
     }
 }
