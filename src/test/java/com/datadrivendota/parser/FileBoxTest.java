@@ -51,9 +51,7 @@ public class FileBoxTest {
         String actual_2 = f2.makeFilename("radiant", "statelog", "allstate");
         assertEquals(expected_2, actual_2);
 
-
     }
-
 
     @Test
     public void uploadS3() throws Exception {
@@ -62,6 +60,20 @@ public class FileBoxTest {
         byte[] compressedBytes = box.gzipString(str);
         // box.writeS3("foo.gz", compressedBytes);
         // Expect something at https://s3.amazonaws.com/datadrivendota/raw_replay_parse/foo.gz
+    }
+
+   @Test
+    public void testCombat() throws Exception {
+       Replay replay = new Replay("test_2549583869.dem");
+       replay.setFilename("/home/ben/IdeaProjects/proper_parser/test_2549583869.dem");
+       FileBox filebox = new FileBox();
+       Parser parser = new Parser(replay);
+       parser.run(filebox);
+       assertEquals(filebox.stringTable.size(), 533);
+
+       filebox.setMatch_id(new BigInteger("2549583869"));
+       filebox.mungeTimes();
+       filebox.saveItemBuys();
     }
 
 

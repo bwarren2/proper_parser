@@ -3,14 +3,13 @@ package com.datadrivendota.parser;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
-import com.amazonaws.services.ec2.model.State;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
@@ -37,10 +36,11 @@ public class FileBox {
 
     // Player slot, then time:state
     private HashMap<Integer, HashMap<Integer, StateEntry>> files = new HashMap<Integer, HashMap<Integer, StateEntry>>();
+    private HashMap<Integer, Integer> slotStringtableIndex = new HashMap<>();
 
     // Combatlog events happen at ~random times, and can have many at a single tick.
     // We process them later.
-    private List<CombatEntry> combat= new ArrayList<>();
+    private List<CombatEntry> combat = new ArrayList<>();
 
     // These are the strings mapped to ids given by protobuf.
     public HashMap<Integer, String> stringTable = new HashMap<>();
@@ -62,6 +62,11 @@ public class FileBox {
         files.get(slot).put(entry.getTick_time(), entry);
 
     }
+
+    public void addSlotIndex(Integer slot, Integer index){
+        this.slotStringtableIndex.put(slot, index);
+    }
+
     public void addCombat(CombatEntry entry){
         combat.add(entry);
     }
@@ -301,13 +306,46 @@ public class FileBox {
 
     }
 
-    private void mungeTimes(){
+    public void mungeTimes(){
         this.offsetTimes();
         this.convertItems();
     }
 
-    private void saveItemBuys() {
-    // Fill it
+    public void saveItemBuys() {
+
+        HashMap<String, Integer> slotMap = new HashMap<>();
+        for (Integer slot: this.slotStringtableIndex.keySet()) {
+            slotMap.put(this.stringTable.get(slotStringtableIndex.get(slot)), slot);
+        }
+
+        HashMap<Integer, ArrayList<CombatEntry>> item_buys = new HashMap<>();
+        for (CombatEntry combatEntry : combat) {
+            if (combatEntry.type=="purchase"){
+                Integer slot = slotMap.get(combatEntry.target);
+                ArrayList<CombatEntry> ary = item_buys.get(slot);
+                if (ary ==null){
+                    ary = new ArrayList<CombatEntry>();
+                }
+                ary.add(combatEntry);
+                item_buys.put(slot, ary);
+            }
+
+        }
+        for (Integer key : item_buys.keySet()) {
+            ObjectMapper om = new ObjectMapper();
+            om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            String value = null;
+            try {
+                value = om.writeValueAsString(item_buys.get(key));
+                byte[] data = gzipString(value);
+                this.output_files.put(this.makeFilename(key, "combatlog", "item_buys"), data);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.print(item_buys);
     }
 
     private void offsetTimes(){
@@ -320,7 +358,7 @@ public class FileBox {
         if (offset==-10){
             System.exit(0);
         }
-        for (CombatEntry combatEntry : combat) {
+        for (CombatEntry combatEntry : this.combat) {
             combatEntry.setOffset_time(offset);
         }
         for (Integer key: this.files.keySet()){
@@ -333,7 +371,6 @@ public class FileBox {
         for (Integer key: this.files.keySet()){
             HashMap<Integer, StateEntry> file = this.files.get(key);
             for (Integer key2: file.keySet()) file.get(key2).swapItemNames(stringTable);
-
         }
     }
 

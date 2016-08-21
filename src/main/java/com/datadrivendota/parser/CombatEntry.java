@@ -242,7 +242,7 @@ public class CombatEntry {
                 this.attacker_name = cle.getAttackerName();
                 this.attacker_illusion = cle.isAttackerIllusion();
                 this.attacker_hero = cle.isAttackerHero();
-                this.attacker_source = cle.getDamageSourceName(); // ??
+                this.attacker_source = cle.getDamageSourceName();
 
                 this.target = cle.getTargetName();
                 this.target_illusion = cle.isTargetIllusion();
@@ -425,11 +425,29 @@ public class CombatEntry {
     public String toString() {
         return "CombatEntry{" +
                 "tick_time=" + tick_time +
+                ", offset_time=" + offset_time +
                 ", type='" + type + '\'' +
+                ", subtype='" + subtype + '\'' +
+                ", team=" + team +
+                ", key='" + key + '\'' +
+                ", value=" + value +
                 ", player_slot=" + player_slot +
+                ", attacker_name='" + attacker_name + '\'' +
+                ", attacker_illusion=" + attacker_illusion +
+                ", attacker_hero=" + attacker_hero +
                 ", attacker_source='" + attacker_source + '\'' +
+                ", target='" + target + '\'' +
                 ", target_source='" + target_source + '\'' +
+                ", target_hero=" + target_hero +
+                ", target_illusion=" + target_illusion +
+                ", inflictor='" + inflictor + '\'' +
+                ", gold_reason=" + gold_reason +
+                ", xp_reason=" + xp_reason +
+                ", gold=" + gold +
+                ", lh=" + lh +
+                ", xp=" + xp +
+                ", x=" + x +
+                ", y=" + y +
                 '}';
     }
-
 }

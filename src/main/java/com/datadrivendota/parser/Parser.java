@@ -2,12 +2,9 @@ package com.datadrivendota.parser;
 
 import com.google.protobuf.ByteString;
 
-import org.joda.time.format.PeriodFormatter;
-import org.joda.time.format.PeriodFormatterBuilder;
 import skadistats.clarity.Clarity;
 import skadistats.clarity.model.CombatLogEntry;
 import skadistats.clarity.model.Entity;
-import skadistats.clarity.model.FieldPath;
 import skadistats.clarity.model.StringTable;
 import skadistats.clarity.processor.entities.Entities;
 import skadistats.clarity.processor.entities.UsesEntities;
@@ -18,7 +15,6 @@ import skadistats.clarity.processor.runner.SimpleRunner;
 import skadistats.clarity.processor.stringtables.OnStringTableEntry;
 import skadistats.clarity.source.MappedFileSource;
 import skadistats.clarity.wire.common.proto.Demo.CDemoFileInfo;
-import skadistats.clarity.wire.common.proto.DotaUserMessages;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
@@ -70,7 +66,6 @@ public class Parser {
                 StateEntry state = new StateEntry(i, tick_time);
 
                 state.addPlayerState(playerresource, i);
-
                 Entity side_resource;
                 Integer lookup_i;
                 if (i<5) {
@@ -86,11 +81,12 @@ public class Parser {
                 int hero_handle = Util.getEntityProperty(playerresource, "m_vecPlayerTeamData.%i.m_hSelectedHero", i);
 
                 Entity hero = ctx.getProcessor(Entities.class).getByHandle(hero_handle);
-
                 if (hero != null) {
                     state.addHeroState(hero, ctx);
+                    this.filebox.addSlotIndex(i, (Integer) Util.getEntityProperty(hero, "m_pEntity.m_nameStringableIndex", null));
                 }
                 this.filebox.addState(state);
+
             }
 
             // Don't log any more ticks until we are at least interval away.
