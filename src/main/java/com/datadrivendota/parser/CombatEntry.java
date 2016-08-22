@@ -3,10 +3,48 @@ package com.datadrivendota.parser;
 import skadistats.clarity.model.CombatLogEntry;
 import skadistats.clarity.wire.common.proto.DotaUserMessages;
 
+import java.util.List;
+
+import static java.util.Arrays.asList;
+
 /**
  * Created by ben on 8/4/16.
  */
 public class CombatEntry {
+    public List<String> radiant_key_bldgs = asList(
+        "npc_dota_goodguys_fort",
+        "npc_dota_goodguys_melee_rax_bot",
+        "npc_dota_goodguys_melee_rax_mid",
+        "npc_dota_goodguys_range_rax_bot",
+        "npc_dota_goodguys_range_rax_mid",
+        "npc_dota_goodguys_tower1_bot",
+        "npc_dota_goodguys_tower1_mid",
+        "npc_dota_goodguys_tower1_top",
+        "npc_dota_goodguys_tower2_bot",
+        "npc_dota_goodguys_tower2_mid",
+        "npc_dota_goodguys_tower2_top",
+        "npc_dota_goodguys_tower3_bot",
+        "npc_dota_goodguys_tower3_mid",
+        "npc_dota_goodguys_tower3_top",
+        "npc_dota_goodguys_tower4"
+    );
+    public List<String> dire_key_bldgs = asList(
+        "npc_dota_badguys_fort",
+        "npc_dota_badguys_melee_rax_bot",
+        "npc_dota_badguys_melee_rax_mid",
+        "npc_dota_badguys_range_rax_bot",
+        "npc_dota_badguys_range_rax_mid",
+        "npc_dota_badguys_tower1_bot",
+        "npc_dota_badguys_tower1_mid",
+        "npc_dota_badguys_tower1_top",
+        "npc_dota_badguys_tower2_bot",
+        "npc_dota_badguys_tower2_mid",
+        "npc_dota_badguys_tower2_top",
+        "npc_dota_badguys_tower3_bot",
+        "npc_dota_badguys_tower3_mid",
+        "npc_dota_badguys_tower3_top",
+        "npc_dota_badguys_tower4"
+    );
     public Integer tick_time;
     public Integer offset_time;
     public String type;
@@ -449,5 +487,15 @@ public class CombatEntry {
                 ", x=" + x +
                 ", y=" + y +
                 '}';
+    }
+
+    public boolean targetsHero() {
+        return this.target_hero && !this.targetsIllusion();
+    }
+    public boolean targetsBuilding() {
+        return this.radiant_key_bldgs.contains(this.target) || this.dire_key_bldgs.contains(this.target);
+    }
+    public boolean targetsIllusion() {
+        return this.target_illusion;
     }
 }

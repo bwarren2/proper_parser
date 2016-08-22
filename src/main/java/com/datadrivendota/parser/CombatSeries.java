@@ -1,6 +1,9 @@
 package com.datadrivendota.parser;
 import java.lang.IllegalArgumentException;
+import java.util.List;
 import java.util.Objects;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by ben on 8/21/16.
@@ -61,6 +64,207 @@ public class CombatSeries {
         this.courier_kill_income = 0;
         this.earned_income = 0;
         this.key_bldg_dmg_dealt = 0;
+    }
+
+    public void update(CombatEntry ce, String hero, List enemies, List allies){
+
+        if (
+            ce.type == "kills" &&
+            ce.attacker_source == hero &&
+            ce.targetsHero() &&
+            enemies.contains(ce.target)
+        ){
+            this.kills += 1;
+        }
+
+        if (
+                ce.type == "kills" &&
+                ce.target == hero &&
+                ce.targetsHero() &&
+                enemies.contains(ce.attacker_source)
+        ){
+            this.deaths += 1;
+        }
+
+        if (
+                ce.type == "kills" &&
+                ce.attacker_source == hero &&
+                !ce.targetsHero() &&
+                !ce.targetsBuilding() &&
+                !ce.targetsIllusion()
+        ){
+            this.last_hits += 1;
+        }
+
+        if (
+                ce.type == "xp_reasons" &&
+                ce.target == hero
+        ){
+            this.xp += ce.value;
+        }
+
+        if (
+                ce.type == "healing" &&
+                ce.attacker_source == hero &&
+                allies.contains(ce.target)
+        ){
+            this.healing += ce.value;
+        }
+
+        if (
+                ce.type == "damage" &&
+                ce.target == hero &&
+                enemies.contains(ce.attacker_name) &&
+                !ce.targetsIllusion()
+        ){
+            this.hero_dmg_taken += ce.value;
+        }
+
+        if (
+                ce.type == "damage" &&
+                ce.attacker_name == hero &&
+                enemies.contains(ce.target) &&
+                !ce.targetsIllusion()
+        ){
+            this.hero_dmg_dealt += ce.value;
+        }
+
+        if (
+                ce.type == "damage" &&
+                ce.target == hero &&
+                !enemies.contains(ce.attacker_source) &&
+                !ce.targetsIllusion()
+        ){
+            this.other_dmg_taken += ce.value;
+        }
+
+        if (
+                ce.type == "damage" &&
+                ce.attacker_name == hero &&
+                !enemies.contains(ce.target) &&
+                !ce.targetsIllusion()
+        ){
+            this.other_dmg_dealt += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero
+        ){
+            this.all_income += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key != "6"
+        ){
+            this.earned_income += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key == "11"
+        ){
+            this.building_income += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key == "15"
+        ){
+            this.courier_kill_income += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key == "13"
+        ){
+            this.creep_kill_income += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key == "12"
+        ){
+            this.hero_kill_income += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key == "14"
+        ){
+            this.roshan_kill_income+= ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key == "2"
+        ){
+            this.buyback_expense += ce.value;
+        }
+
+        if (
+                ce.type == "gold_reasons" &&
+                ce.target == hero &&
+                ce.key == "1"
+        ){
+            this.death_expense += ce.value;
+        }
+
+        if (
+                ce.type == "xp_reasons" &&
+                ce.target == hero &&
+                ce.key == "1"
+        ){
+            this.hero_xp+= ce.value;
+        }
+
+        if (
+                ce.type == "xp_reasons" &&
+                ce.target == hero &&
+                ce.key == "2"
+        ){
+            this.creep_xp+= ce.value;
+        }
+
+        if (
+                ce.type == "xp_reasons" &&
+                ce.target == hero &&
+                ce.key == "3"
+        ){
+            this.roshan_xp += ce.value;
+        }
+
+        if (
+                ce.type == "damage" &&
+                ce.attacker_source == hero &&
+                ce.targetsBuilding()
+        ){
+            this.key_bldg_dmg_dealt += ce.value;
+        }
+
+        if (
+                ce.type == "kills" &&
+                ce.attacker_source == hero &&
+                ce.targetsBuilding()
+        ){
+            this.key_bldg_kills += 1;
+        }
+
+        if (
+                ce.type == "purchase" &&
+                ce.target == hero
+        ){
+            this.item_buys += 1;
+        }
+
     }
 
     public CombatSeries add(CombatSeries b){
