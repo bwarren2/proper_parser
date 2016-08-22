@@ -3,6 +3,7 @@ package com.datadrivendota.parser;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -21,6 +22,8 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static java.util.Arrays.asList;
+
 /**
  * Responsible for absorbing, transforming, and persisting the replay data info.
  *
@@ -30,13 +33,16 @@ import java.util.zip.GZIPOutputStream;
  */
 public class FileBox {
 
-    // ArrayLists for the various things in Datastream.java in the old version here.
-
-    // POJOs for post-processed data structures.
 
     // Player slot, then time:state
     private HashMap<Integer, HashMap<Integer, StateEntry>> files = new HashMap<Integer, HashMap<Integer, StateEntry>>();
+
+    // Player slot to string handle for hero name.
     private HashMap<Integer, Integer> slotStringtableIndex = new HashMap<>();
+
+    // What we convert the stringtable slot map into.
+    private HashMap<String, Integer> heroSlot = new HashMap<>();
+    private HashMap<Integer, String> slotHero = new HashMap<>();
 
     // Combatlog events happen at ~random times, and can have many at a single tick.
     // We process them later.
@@ -109,6 +115,7 @@ public class FileBox {
 
     public void handle() {
         this.mungeTimes();
+        this.convertSlotMaps();
         this.saveItemBuys();
         this.setBasicState();
         this.setMergedState(0, 4, "radiant");
@@ -119,15 +126,95 @@ public class FileBox {
 //        this.setDiffCombatSeries();
     }
 
+    private void convertSlotMaps() {
+        for (Integer slot: this.slotStringtableIndex.keySet()) {
+            this.heroSlot.put(this.stringTable.get(slotStringtableIndex.get(slot)), slot);
+            this.slotHero.put(slot, this.stringTable.get(slotStringtableIndex.get(slot)));
+        }
+    }
+
+
     private void setCombatSeries() {
-//        get the extent of the combat log
-//        for each hero slot:
-//          make a hashmap of time: setCombatSeries();
-//          for each item in the combatlog:
-//            add it to the combatseries entry at that time
-//          recast hashmap of combatseries to list
-//        cumsum all the combatseries
-//        insert into output files
+
+        // get the extent of the combat log
+        Integer min_time = null;
+        Integer max_time = null;
+        Integer offset = null;
+        for (CombatEntry ce:this.combat) {
+            if (min_time == null || ce.tick_time < min_time) min_time = ce.tick_time;
+            if (max_time == null || ce.tick_time > max_time) max_time = ce.tick_time;
+            if (offset == null ) offset = ce.tick_time - ce.offset_time;
+        }
+
+        // for each hero slot:
+        for (Integer slot: this.slotHero.keySet()) {
+
+            String hero = this.slotHero.get(slot);
+            ArrayList<String> allies = new ArrayList<>();
+            ArrayList<String> enemies = new ArrayList<>();
+            if (slot<5){
+                for (int i = 0; i < 5 ; i++) {
+                    allies.add(this.slotHero.get(i));
+                }
+                for (int i = 5; i < 10 ; i++) {
+                    enemies.add(this.slotHero.get(i));
+                }
+            }else{
+                for (int i = 0; i < 5 ; i++) {
+                    enemies.add(this.slotHero.get(i));
+                }
+                for (int i = 5; i < 10 ; i++) {
+                    allies.add(this.slotHero.get(i));
+                }
+            }
+            HashMap<Integer, CombatSeries> hero_series = new HashMap<>();
+            for (int i = min_time; i <= max_time; i++) {
+                hero_series.put(i, new CombatSeries(i, i-offset));
+            }
+
+            // for each item in the combatlog:
+            for (CombatEntry ce: this.combat) {
+                // add it to the combatseries entry at that time
+                CombatSeries cs = hero_series.get(ce.tick_time);
+                CombatSeries updated = cs.update(ce, hero, enemies, allies);
+                hero_series.put(ce.tick_time, updated);
+            }
+
+            Integer max_income = null;
+            for (Integer key:hero_series.keySet()) {
+                if (max_income == null || hero_series.get(key).all_income > max_income) max_income = hero_series.get(key).all_income;
+            }
+
+            // recast hashmap of combatseries to list
+            ArrayList<CombatSeries> hero_combat_series = new ArrayList<>();
+            for (Integer time : hero_series.keySet()){
+                hero_combat_series.add(hero_series.get(time));
+            }
+            Comparator<CombatSeries> comparator = new Comparator<CombatSeries>() {
+                public int compare(CombatSeries se1, CombatSeries se2) {
+                    return se1.offset_time - se2.offset_time;
+                }
+            };
+            Collections.sort(hero_combat_series, comparator);
+
+            // cumsum all the combatseries
+            List<CombatSeries> hero_cumulative_cs = new ArrayList<>();
+            hero_cumulative_cs.add(hero_combat_series.get(0));
+            for (int i = 1; i < hero_combat_series.size()-1; i++) {
+                hero_cumulative_cs.add(i, hero_combat_series.get(i).add(hero_cumulative_cs.get(i-1)));
+            }
+
+            ObjectMapper om = new ObjectMapper();
+            om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            try {
+                String value = om.writeValueAsString(hero_cumulative_cs);
+                byte[] data = gzipString(value);
+                String filename = makeFilename(slot, "combatseries", "allseries");
+                this.output_files.put(filename, data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void setDiffState(String direction, String side) {
@@ -326,15 +413,10 @@ public class FileBox {
 
     public void saveItemBuys() {
 
-        HashMap<String, Integer> slotMap = new HashMap<>();
-        for (Integer slot: this.slotStringtableIndex.keySet()) {
-            slotMap.put(this.stringTable.get(slotStringtableIndex.get(slot)), slot);
-        }
-
         HashMap<Integer, ArrayList<CombatEntry>> item_buys = new HashMap<>();
         for (CombatEntry combatEntry : combat) {
             if (combatEntry.type=="purchase"){
-                Integer slot = slotMap.get(combatEntry.target);
+                Integer slot = this.heroSlot.get(combatEntry.target);
                 ArrayList<CombatEntry> ary = item_buys.get(slot);
                 if (ary ==null){
                     ary = new ArrayList<CombatEntry>();
@@ -358,7 +440,6 @@ public class FileBox {
                 e.printStackTrace();
             }
         }
-        System.out.print(item_buys);
     }
 
     private void offsetTimes(){
