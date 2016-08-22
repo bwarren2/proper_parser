@@ -115,6 +115,19 @@ public class FileBox {
         this.setMergedState(5, 9, "dire");
         this.setDiffState("radiant-dire", "diff");
         this.setDiffState("dire-radiant", "negdiff");
+        this.setCombatSeries();
+//        this.setDiffCombatSeries();
+    }
+
+    private void setCombatSeries() {
+//        get the extent of the combat log
+//        for each hero slot:
+//          make a hashmap of time: setCombatSeries();
+//          for each item in the combatlog:
+//            add it to the combatseries entry at that time
+//          recast hashmap of combatseries to list
+//        cumsum all the combatseries
+//        insert into output files
     }
 
     private void setDiffState(String direction, String side) {
