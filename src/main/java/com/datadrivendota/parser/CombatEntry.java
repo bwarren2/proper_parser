@@ -1,5 +1,6 @@
 package com.datadrivendota.parser;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import skadistats.clarity.model.CombatLogEntry;
 import skadistats.clarity.wire.common.proto.DotaUserMessages;
 
@@ -11,6 +12,7 @@ import static java.util.Arrays.asList;
  * Created by ben on 8/4/16.
  */
 public class CombatEntry {
+    @JsonIgnore
     public List<String> radiant_key_bldgs = asList(
         "npc_dota_goodguys_fort",
         "npc_dota_goodguys_melee_rax_bot",
@@ -28,6 +30,7 @@ public class CombatEntry {
         "npc_dota_goodguys_tower3_top",
         "npc_dota_goodguys_tower4"
     );
+    @JsonIgnore
     public List<String> dire_key_bldgs = asList(
         "npc_dota_badguys_fort",
         "npc_dota_badguys_melee_rax_bot",

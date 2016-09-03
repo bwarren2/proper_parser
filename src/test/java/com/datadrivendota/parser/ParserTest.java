@@ -68,6 +68,6 @@ public class ParserTest {
 
         assertEquals(true, actual.equals(expected));
         // Want to hand-test the uploaded files?
-        filebox.uploadFiles();
+        // filebox.uploadFiles();
     }
 }

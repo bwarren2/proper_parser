@@ -37,19 +37,19 @@ public class QueueManager {
 
     public QueueManager() {
 
-//        try {
-//            Connection connection = this.getConnection();
-//            this.channel = connection.createChannel();
-//            this.channel.exchangeDeclare(LISTEN_EXCHANGE, "direct");
-//            this.queueName = this.channel.queueDeclare(
-//                    LISTEN_QUEUE,  DURABLE, PASSIVE, EXCLUSIVE, null
-//            ).getQueue();
-//            this.channel.queueBind(this.queueName, LISTEN_EXCHANGE, LISTEN_EXCHANGE);
-//            this.channel.basicQos(3);
-//            this.consumer = new QueueingConsumer(channel);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        try {
+            Connection connection = this.getConnection();
+            this.channel = connection.createChannel();
+            this.channel.exchangeDeclare(LISTEN_EXCHANGE, "direct");
+            this.queueName = this.channel.queueDeclare(
+                    LISTEN_QUEUE,  DURABLE, PASSIVE, EXCLUSIVE, null
+            ).getQueue();
+            this.channel.queueBind(this.queueName, LISTEN_EXCHANGE, LISTEN_EXCHANGE);
+            this.channel.basicQos(3);
+            this.consumer = new QueueingConsumer(channel);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 

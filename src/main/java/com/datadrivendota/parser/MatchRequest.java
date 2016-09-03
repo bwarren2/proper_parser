@@ -9,8 +9,8 @@ import java.math.BigInteger;
  */
 
 public class MatchRequest {
-    private String url;
-    private BigInteger match_id;
+    public String url;
+    public BigInteger match_id;
 
     public String getUrl() {
         return url;
@@ -24,4 +24,5 @@ public class MatchRequest {
         this.url = url;
         this.match_id = match_id;
     }
+    public MatchRequest(){}
 }

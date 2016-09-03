@@ -1,12 +1,11 @@
 package com.datadrivendota.parser;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 
-import org.apache.commons.io.FileUtils;
+import static org.apache.commons.io.FileUtils.copyURLToFile;
 
 /**
  *
@@ -63,8 +62,7 @@ public class Replay {
         System.out.println("Getting file data: " + filename);
 
         File destination = new File(filename);
-//      TECHDEBT: Should be this signature, but maven can't find the signature.
-//      copyURLToFile(query_url, destination, 2000, 2000);
+        copyURLToFile(query_url, destination, 2000, 2000);
 
         System.out.println("Got File");
 
