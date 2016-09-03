@@ -538,7 +538,7 @@ public class FileBox {
             ObjectMetadata md = new ObjectMetadata();
             // md.setContentLength(match_parse.length());
             md.setContentType("json");
-            md.addUserMetadata("Content-Encoding", "gzip");
+            md.setContentEncoding("gzip");
 
             // Convert the String into InputStream
             InputStream is = new ByteArrayInputStream(data);

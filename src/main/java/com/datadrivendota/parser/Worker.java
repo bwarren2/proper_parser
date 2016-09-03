@@ -1,7 +1,6 @@
 package com.datadrivendota.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.rabbitmq.client.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -56,7 +55,7 @@ public class Worker {
                     MatchRequest request = om.readValue(message, MatchRequest.class);
                     System.out.println(" [x] Received '" + request.getUrl()+ "' (M#"+request.getMatch_id().toString() + ")");
                     long deliveryTag = envelope.getDeliveryTag();
-                    if(request!=null) try {
+                    try {
                         FileBox filebox = new FileBox();
                         Replay replay = new Replay(request.getUrl());
                         Parser parser = new Parser(replay);
