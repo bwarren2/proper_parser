@@ -80,7 +80,7 @@ public class Worker {
                         output_msg = "Oddball error";
                     }
                     try {
-                        sendResp(output_msg, request.getMatch_id(), channel);
+                        sendResp(output_msg, request.getMatch_id());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -97,7 +97,7 @@ public class Worker {
 
     }
 
-    public static void sendResp(String msg, BigInteger match_id, Channel channelx) throws Exception {
+    public static void sendResp(String msg, BigInteger match_id) throws Exception {
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setUri(System.getenv("CLOUDAMQP_URL"));
@@ -107,17 +107,13 @@ public class Worker {
         Channel channel = connection.createChannel();
 
         channel.exchangeDeclare(SEND_EXCHANGE, "direct", true);
-        String queueName = channel.queueDeclare(
-                SEND_QUEUE, DURABLE, PASSIVE, EXCLUSIVE, null
-        ).getQueue();
+        String queueName = channel.queueDeclare(SEND_QUEUE, DURABLE, PASSIVE, EXCLUSIVE, null).getQueue();
         channel.queueBind(queueName, SEND_EXCHANGE, SEND_EXCHANGE);
 
         MatchResponse msgObj = new MatchResponse(msg, new BigInteger(String.valueOf(match_id)));
         ObjectMapper om = new ObjectMapper();
         String json = om.writeValueAsString(msgObj);
-        channel.basicPublish(
-                SEND_EXCHANGE, SEND_QUEUE, null, json.getBytes("UTF-8")
-        );
+        channel.basicPublish(SEND_EXCHANGE, SEND_QUEUE, null, json.getBytes("UTF-8"));
         channel.close();
         connection.close();
 
