@@ -1,6 +1,7 @@
 package com.datadrivendota.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.rabbitmq.client.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -66,7 +67,6 @@ public class Worker {
                         filebox.handle();
                         filebox.uploadFiles();
 
-                        channel.basicAck(deliveryTag, false);
                         output_msg = "Done";
                     } catch (FileNotFoundException | SocketTimeoutException e) {
                         System.out.println("Exception!");
@@ -97,13 +97,30 @@ public class Worker {
 
     }
 
-    public static void sendResp(String msg, BigInteger match_id, Channel channel) throws Exception {
+    public static void sendResp(String msg, BigInteger match_id, Channel channelx) throws Exception {
 
-        System.out.println("Sending response back to queue");
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUri(System.getenv("CLOUDAMQP_URL"));
+        factory.setAutomaticRecoveryEnabled(true);
+        System.out.println(System.getenv("CLOUDAMQP_URL"));
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
+
+        channel.exchangeDeclare(SEND_EXCHANGE, "direct", true);
+        String queueName = channel.queueDeclare(
+                SEND_QUEUE, DURABLE, PASSIVE, EXCLUSIVE, null
+        ).getQueue();
+        channel.queueBind(queueName, SEND_EXCHANGE, SEND_EXCHANGE);
+
         MatchResponse msgObj = new MatchResponse(msg, new BigInteger(String.valueOf(match_id)));
         ObjectMapper om = new ObjectMapper();
         String json = om.writeValueAsString(msgObj);
-        channel.basicPublish(SEND_EXCHANGE, SEND_QUEUE, null, json.getBytes("UTF-8"));
+        channel.basicPublish(
+                SEND_EXCHANGE, SEND_QUEUE, null, json.getBytes("UTF-8")
+        );
+        channel.close();
+        connection.close();
+
         System.out.println(" [x] Sent '" + json + "'");
 
     }
