@@ -213,6 +213,7 @@ public class FileBox {
                 this.output_files.put(filename, data);
             } catch (IOException e) {
                 e.printStackTrace();
+                System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
             }
         }
     }
@@ -230,7 +231,7 @@ public class FileBox {
             dire.put(entry.tick_time, entry);
         }
         for (Integer time : radiant.keySet()) {
-            if (radiant .get(time).health != null) { // If the player has a hero
+            if (radiant.get(time).health != null) { // If the player has a hero
                 Integer existing;
                 try {
                     existing = counts.get(time);
@@ -243,7 +244,7 @@ public class FileBox {
         }
 
         for (Integer time : dire.keySet()) {
-            if (radiant.get(time).health != null) { // If the player has a hero
+            if (dire.get(time).health != null) { // If the player has a hero
                 Integer existing;
                 try {
                     existing = counts.get(time);
@@ -290,6 +291,7 @@ public class FileBox {
             this.output_files.put(filename, data);
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
         }
 
     }
@@ -319,6 +321,7 @@ public class FileBox {
                 this.output_files.put(filename, data);
             } catch (IOException e) {
                 e.printStackTrace();
+                System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
             }
         }
     }
@@ -374,6 +377,7 @@ public class FileBox {
             this.output_files.put(filename, data);
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
         }
 
     }
@@ -436,8 +440,10 @@ public class FileBox {
                 this.output_files.put(this.makeFilename(key, "combatlog", "item_buys"), data);
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
+                System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
             } catch (IOException e) {
                 e.printStackTrace();
+                System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
             }
         }
     }
@@ -504,6 +510,7 @@ public class FileBox {
             );
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
         }
         return stateEntryList;
     }
