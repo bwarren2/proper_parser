@@ -55,19 +55,25 @@ public class Worker {
                     MatchRequest request = om.readValue(message, MatchRequest.class);
                     System.out.println(" [x] Received '" + request.getUrl()+ "' (M#"+request.getMatch_id().toString() + ")");
                     long deliveryTag = envelope.getDeliveryTag();
+                    Replay replay = new Replay();
                     try {
                         FileBox filebox = new FileBox();
-                        Replay replay = new Replay(request.getUrl());
+                        replay = new Replay(request.getUrl());
                         Parser parser = new Parser(replay);
 
                         filebox = parser.run(filebox);  // Rip apart the replay and populate the filebox.
-                        replay.purgeFile();  // Remove the local replay file.
+                        replay.purgeFiles();  // Remove the local replay file.
                         filebox.setMatch_id(request.getMatch_id());
                         filebox.handle();
                         filebox.uploadFiles();
 
                         output_msg = "Done";
-                    } catch (FileNotFoundException | SocketTimeoutException e) {
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Exception!");
+                        e.printStackTrace();
+                        System.out.println("/Exception!");
+                        output_msg = "notfound";
+                    } catch (SocketTimeoutException e) {
                         System.out.println("Exception!");
                         e.printStackTrace();
                         System.out.println("/Exception!");
@@ -77,17 +83,20 @@ public class Worker {
                         e.printStackTrace();
                         System.out.println("/Exception!");
                         output_msg = "Oddball error";
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                     try {
                         sendResp(output_msg, request.getMatch_id());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    replay.purgeFiles();  // Remove the local replay file.
                     channel.basicAck(deliveryTag, false);
 
                 }
             };
-            channel.basicConsume(LISTEN_QUEUE, true, consumer);
+            channel.basicConsume(LISTEN_QUEUE, false, consumer);
             System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
         } catch (Exception e) {

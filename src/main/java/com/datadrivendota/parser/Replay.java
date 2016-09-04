@@ -21,6 +21,7 @@ public class Replay {
     }
 
     private String filename;
+    private String zip_filename;
 
     public void setFilename(String filename) {
         this.filename = filename;
@@ -35,14 +36,12 @@ public class Replay {
      *
      * @param url the Valve CDN replay file url
      */
-    public Replay(String url) {
+    public Replay(String url) throws IOException {
         this.url = url;
-        try {
-            this.getFile(this.url);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.getFile(this.url);
     }
+
+    public Replay() {}
 
     /**
      * Make the file at the given URL local and unzipped.  Probably will either get rolled into the constructor
@@ -70,6 +69,7 @@ public class Replay {
         String output_name = pieces[0] +'.'+ pieces[1];
         System.out.println("Unzipping to: "+output_name);
 
+        this.zip_filename = filename;
         FileInputStream fin = new FileInputStream(filename);
         BufferedInputStream in = new BufferedInputStream(fin);
         FileOutputStream out = new FileOutputStream(output_name);
@@ -93,10 +93,13 @@ public class Replay {
     }
 
     /**
-     * Remove the local file.
+     * Remove the local files.
+     * To recover from potential file management errors, we flexibly delete and call this in multiple places.
+     * (Why not just call at the end?  Trying to minimize memory overhead.
      */
-    public void purgeFile(){
-        deleteFile(this.filename);
+    public void purgeFiles(){
+        if (this.filename!=null) deleteFile(this.filename);
+        if (this.zip_filename!=null) deleteFile(this.zip_filename);
     }
     private void deleteFile(String filename){
         File file = new File(filename);
