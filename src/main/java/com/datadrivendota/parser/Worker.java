@@ -67,24 +67,25 @@ public class Worker {
                         filebox.handle();
                         filebox.uploadFiles();
 
-                        output_msg = "Done";
+                        output_msg = "done";
                     } catch (FileNotFoundException e) {
                         System.out.println("Exception!");
                         e.printStackTrace();
                         System.out.println("/Exception!");
-                        output_msg = "notfound";
+                        output_msg = "not_found";
                     } catch (SocketTimeoutException e) {
                         System.out.println("Exception!");
                         e.printStackTrace();
                         System.out.println("/Exception!");
-                        output_msg = "notfound";
+                        output_msg = "not_found";
                     } catch (IndexOutOfBoundsException e) {
                         System.out.println("Exception!");
                         e.printStackTrace();
                         System.out.println("/Exception!");
-                        output_msg = "Oddball error";
+                        output_msg = "unknown_error";
                     } catch (Exception e) {
                         e.printStackTrace();
+                        output_msg = "unknown_error";
                     }
                     try {
                         sendResp(output_msg, request.getMatch_id());

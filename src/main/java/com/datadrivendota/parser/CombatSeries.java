@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * Created by ben on 8/21/16.
  */
-public class CombatSeries {
+public class CombatSeries implements Cloneable{
 
     public Integer time;
     public Integer offset_time;
@@ -63,6 +63,8 @@ public class CombatSeries {
         this.earned_income = 0;
         this.key_bldg_dmg_dealt = 0;
     }
+
+    public CombatSeries(){}
 
     public CombatSeries update(CombatEntry ce, String hero, List enemies, List allies){
 
@@ -295,7 +297,11 @@ public class CombatSeries {
         return c;
     }
     public CombatSeries subtract(CombatSeries b){
-        if (this.offset_time != b.offset_time || this.time != b.time) throw new IllegalArgumentException();
+        if (!Objects.equals(this.offset_time, b.offset_time) || !Objects.equals(this.time, b.time)){
+            System.out.println(this);
+            System.out.println(b);
+            throw new IllegalArgumentException();
+        }
         CombatSeries c = new CombatSeries(this.time, this.offset_time);
         c.all_income = this.all_income - b.all_income;
         c.item_buys = this.item_buys - b.item_buys;
@@ -381,5 +387,14 @@ public class CombatSeries {
                 ", key_bldg_dmg_dealt=" + key_bldg_dmg_dealt +
                 ", offset_time=" + offset_time +
                 '}';
+    }
+    public Object clone() {
+        try {
+            return super.clone();
+        }
+        catch (CloneNotSupportedException e) {
+            // This should never happen
+            throw new InternalError(e.toString());
+        }
     }
 }

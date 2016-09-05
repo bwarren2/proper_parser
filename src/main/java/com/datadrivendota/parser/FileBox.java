@@ -3,7 +3,6 @@ package com.datadrivendota.parser;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
-import com.amazonaws.services.dynamodbv2.xspec.S;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -21,8 +20,6 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import static java.util.Arrays.asList;
 
 /**
  * Responsible for absorbing, transforming, and persisting the replay data info.
@@ -123,7 +120,10 @@ public class FileBox {
         this.setDiffState("radiant-dire", "diff");
         this.setDiffState("dire-radiant", "negdiff");
         this.setCombatSeries();
-//        this.setDiffCombatSeries();
+        this.setMergedSeries(0, 4, "radiant");
+        this.setMergedSeries(5, 9, "dire");
+        this.setCombatSeriesDiff("radiant-dire", "diff");
+        this.setCombatSeriesDiff("dire-radiant", "negdiff");
     }
 
     private void convertSlotMaps() {
@@ -296,6 +296,85 @@ public class FileBox {
 
     }
 
+    private void setCombatSeriesDiff(String direction, String side) {
+        HashMap<Integer, Integer> counts = new HashMap<>();
+        ArrayList<CombatSeries> radiant_ary = this.getOutputFileSeriesArray(this.makeFilename("radiant", "combatseries", "allseries"));
+        HashMap<Integer, CombatSeries> radiant = new HashMap<>();
+        for (CombatSeries entry : radiant_ary){
+            radiant.put(entry.time, entry);
+        }
+        ArrayList<CombatSeries> dire_ary = this.getOutputFileSeriesArray(this.makeFilename("dire", "combatseries", "allseries"));
+        HashMap<Integer, CombatSeries> dire= new HashMap<>();
+        for (CombatSeries entry : dire_ary){
+            dire.put(entry.time, entry);
+        }
+        for (Integer time : radiant.keySet()) {
+            if (radiant.get(time).all_income != null) { // If the player has a hero
+                Integer existing;
+                try {
+                    existing = counts.get(time);
+                } catch (NullPointerException e) {
+                    existing = 0;
+                }
+                if (existing == null) existing = 0;  // Dunno why I need this, but I do.
+                counts.put(time, existing + 1);
+            }
+        }
+
+        for (Integer time : dire.keySet()) {
+            if (dire.get(time).all_income != null) { // If the player has a hero
+                Integer existing;
+                try {
+                    existing = counts.get(time);
+                } catch (NullPointerException e) {
+                    existing = 0;
+                }
+                if (existing == null) existing = 0;  // Dunno why I need this, but I do.
+                counts.put(time, existing + 1);
+            }
+        }
+
+        List<Integer> validTimesList = new ArrayList<>();
+        for (Integer time : counts.keySet()){
+            if (counts.get(time)==2){
+                validTimesList.add(time);
+            }
+        }
+        Collections.sort(validTimesList);
+        ArrayList<CombatSeries> side_series = new ArrayList<>();
+        for (Integer time : validTimesList){
+            CombatSeries base = null;
+            if (Objects.equals(direction, "radiant-dire")) {
+                base = (CombatSeries) radiant.get(time).clone(); // Adding only well defined on populated things.
+                base.subtract(dire.get(time));
+            } else {
+                base = (CombatSeries) dire.get(time).clone(); // Adding only well defined on populated things.
+                base.subtract(radiant.get(time));
+            }
+            side_series.add(base);
+        }
+
+        Comparator<CombatSeries> comparator = new Comparator<CombatSeries>() {
+            public int compare(CombatSeries se1, CombatSeries se2) {
+                return se1.offset_time - se2.offset_time;
+            }
+        };
+        Collections.sort(side_series, comparator);
+        ObjectMapper om = new ObjectMapper();
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            String value = om.writeValueAsString(side_series);
+            byte[] data = gzipString(value);
+            String filename = makeFilename(side, "combatseries", "allseries");
+            this.output_files.put(filename, data);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
+        }
+
+    }
+
+
     private void setBasicState() {
         for (Integer slot : this.files.keySet()){
             HashMap<Integer, StateEntry> statemap = this.files.get(slot);
@@ -330,6 +409,7 @@ public class FileBox {
         ArrayList<StateEntry> side_states = new ArrayList<>();
 
         HashMap<Integer, Integer> counts = new HashMap<>();
+
         for (int slot = startIndex; slot <= endIndex; slot++) {
             for (Integer time : this.files.get(slot).keySet()){
                 if (this.files.get(slot).get(time).health != null){ // If the player has a hero
@@ -381,6 +461,73 @@ public class FileBox {
         }
 
     }
+
+    private void setMergedSeries(Integer startIndex, Integer endIndex, String side) {
+        ArrayList<CombatSeries> side_series = new ArrayList<>();
+
+        HashMap<Integer, Integer> counts = new HashMap<>();
+        HashMap<Integer, HashMap<Integer, CombatSeries>> lookup = new HashMap<>();
+        for (int slot = startIndex; slot <= endIndex; slot++) {
+            HashMap<Integer, CombatSeries> time_map = new HashMap<>();
+            ArrayList<CombatSeries> raw_ary = this.getOutputFileSeriesArray(
+                    this.makeFilename(slot, "combatseries", "allseries")
+            );
+            for (CombatSeries ce: raw_ary) {
+                time_map.put(ce.time, ce);
+            }
+            lookup.put(slot, time_map);
+            for (Integer time : time_map.keySet()){
+                if (time_map.get(time).all_income != null){ // If the player has a hero
+                    Integer existing;
+                    try {
+                        existing = counts.get(time);
+                    } catch (NullPointerException e){
+                        existing = 0;
+                    }
+                    if (existing == null) existing = 0;  // Dunno why I need this, but I do.
+                    counts.put(time, existing+1);
+                }
+            }
+        }
+        List<Integer> validTimesList = new ArrayList<>();
+        for (Integer time : counts.keySet()){
+            if (counts.get(time)==5){
+                validTimesList.add(time);
+            }
+        }
+        Collections.sort(validTimesList);
+        for (Integer time : validTimesList){
+            CombatSeries base = null;
+            for (int slot = startIndex; slot <= endIndex; slot++) {
+                System.out.println(slot);
+                if (slot==startIndex) base = (CombatSeries) lookup.get(slot).get(time).clone(); // Adding only well defined on populated things.
+                if (slot!=startIndex) base.add(lookup.get(slot).get(time));
+                base.offset_time = lookup.get(slot).get(time).offset_time;
+                base.time = lookup.get(slot).get(time).time;
+            }
+            side_series.add(base);
+        }
+
+        Comparator<CombatSeries> comparator = new Comparator<CombatSeries>() {
+            public int compare(CombatSeries se1, CombatSeries se2) {
+                return se1.offset_time - se2.offset_time;
+            }
+        };
+        Collections.sort(side_series, comparator);
+        ObjectMapper om = new ObjectMapper();
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            String value = om.writeValueAsString(side_series);
+            byte[] data = gzipString(value);
+            String filename = makeFilename(side, "combatseries", "allseries");
+            this.output_files.put(filename, data);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
+        }
+
+    }
+
 
     public String makeFilename(Integer slot, String log_type, String facet){
         Integer player_slot;
@@ -515,6 +662,22 @@ public class FileBox {
         return stateEntryList;
     }
 
+    public ArrayList<CombatSeries> getOutputFileSeriesArray(String filename) {
+        ObjectMapper om = new ObjectMapper();
+        byte[] compressed = this.output_files.get(filename);
+        ArrayList<CombatSeries> seriesList = new ArrayList<>();
+        try {
+            seriesList  = om.readValue(
+                    this.ungzipString(compressed),
+                    new TypeReference<ArrayList<CombatSeries>>() {}
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println(new Throwable().getStackTrace()[0].getLineNumber());
+        }
+        return seriesList ;
+    }
+
 
     public String ungzipString(byte[] compressed) throws IOException {
         final int BUFFER_SIZE = 32;
@@ -539,7 +702,7 @@ public class FileBox {
 
         System.out.println("Got creds");
         String bucketName     = "datadrivendota";
-        String keyName        = "raw_replay_parse/"+filename;
+        String keyName        = "processed_replay_parse/"+filename;
 
         try {
             ObjectMetadata md = new ObjectMetadata();
