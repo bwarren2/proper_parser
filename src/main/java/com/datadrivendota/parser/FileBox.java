@@ -269,9 +269,13 @@ public class FileBox {
             if (direction=="radiant-dire") {
                 base = (StateEntry) radiant.get(time).clone(); // Adding only well defined on populated things.
                 base.subtract(dire.get(time));
+                base.offset_time = dire.get(time).offset_time;
+                base.tick_time = dire.get(time).tick_time;
             } else {
                 base = (StateEntry) dire.get(time).clone(); // Adding only well defined on populated things.
                 base.subtract(radiant.get(time));
+                base.offset_time = radiant.get(time).offset_time;
+                base.tick_time = radiant.get(time).tick_time;
             }
             side_states.add(base);
         }
@@ -346,10 +350,10 @@ public class FileBox {
             CombatSeries base = null;
             if (Objects.equals(direction, "radiant-dire")) {
                 base = (CombatSeries) radiant.get(time).clone(); // Adding only well defined on populated things.
-                base.subtract(dire.get(time));
+                base = base.subtract(dire.get(time));
             } else {
                 base = (CombatSeries) dire.get(time).clone(); // Adding only well defined on populated things.
-                base.subtract(radiant.get(time));
+                base = base.subtract(radiant.get(time));
             }
             side_series.add(base);
         }
@@ -499,9 +503,13 @@ public class FileBox {
         for (Integer time : validTimesList){
             CombatSeries base = null;
             for (int slot = startIndex; slot <= endIndex; slot++) {
-                System.out.println(slot);
                 if (slot==startIndex) base = (CombatSeries) lookup.get(slot).get(time).clone(); // Adding only well defined on populated things.
-                if (slot!=startIndex) base.add(lookup.get(slot).get(time));
+                if (slot!=startIndex) base = base.add(lookup.get(slot).get(time));
+//                if (time.equals(2375)){
+//                    System.out.println(slot);
+//                    System.out.println(startIndex);
+//                    System.out.println(base);
+//                }
                 base.offset_time = lookup.get(slot).get(time).offset_time;
                 base.time = lookup.get(slot).get(time).time;
             }

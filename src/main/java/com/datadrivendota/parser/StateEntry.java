@@ -481,6 +481,8 @@ public class StateEntry implements Cloneable{
     }
 
     public void subtract(StateEntry obj){
+        this.offset_time = obj.offset_time;
+        this.tick_time = obj.tick_time;
         if(this.agility!=null && obj.agility!= null) this.agility -= obj.agility;
         if(this.agility_total!=null && obj.agility_total!= null) this.agility_total -= obj.agility_total;
         if(this.armor!=null && obj.armor!= null) this.armor -= obj.armor;
