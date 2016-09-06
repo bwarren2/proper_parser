@@ -1,3 +1,4 @@
 .idea/*
 parser-rework.iml
 target/*
+.env*
