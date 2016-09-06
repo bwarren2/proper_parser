@@ -2,3 +2,4 @@
 parser-rework.iml
 target/*
 .env*
+docker-compose.yaml
